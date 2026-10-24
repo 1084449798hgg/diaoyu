@@ -1,0 +1,19 @@
+# 依赖
+node_modules/
+
+# 构建产物（可由源码重建）
+dist/
+
+# 环境变量 / 密钥
+.env
+
+# 运行时上传目录（用户渔获图等）
+/backend/uploads/
+
+# 日志
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.rdb
