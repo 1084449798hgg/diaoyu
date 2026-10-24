@@ -367,7 +367,7 @@ function MapBtn({ icon, label, active, onClick }) {
 
 function InfoCell({ label, value }) {
   return (
-    <div style={{ background: 'rgba(4,24,33,0.45)', borderRadius: 10, padding: '8px 10px' }}>
+    <div style={{ background: 'var(--cell-bg)', borderRadius: 10, padding: '8px 10px' }}>
       <div className="muted" style={{ fontSize: 10.5 }}>{label}</div>
       <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{value}</div>
     </div>

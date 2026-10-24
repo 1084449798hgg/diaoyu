@@ -160,7 +160,7 @@ export default function FishingIndexPage({ onNavigateToMap }) {
                         <td>{h.dissolvedOxygen ?? '-'}</td>
                         <td style={{ minWidth: 92 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(4,24,33,0.6)', overflow: 'hidden' }}>
+                            <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--cell-bg)', overflow: 'hidden' }}>
                               <div style={{
                                 width: `${h.score}%`, height: '100%',
                                 background: h.score >= 82 ? 'var(--green)' : h.score >= 68 ? 'var(--blue)' : h.score >= 52 ? 'var(--amber)' : 'var(--red)',
@@ -234,7 +234,7 @@ export default function FishingIndexPage({ onNavigateToMap }) {
                     {f.direction === 'positive' ? '正向' : '负向'} · 权重 {Math.round(f.weight * 100)}%
                   </span>
                 </div>
-                <div style={{ height: 5, borderRadius: 3, background: 'rgba(4,24,33,0.6)', marginTop: 4 }}>
+                <div style={{ height: 5, borderRadius: 3, background: 'var(--cell-bg)', marginTop: 4 }}>
                   <div style={{ width: `${f.score}%`, height: '100%', borderRadius: 3, background: f.direction === 'positive' ? 'var(--green)' : 'var(--amber)' }} />
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function FishingIndexPage({ onNavigateToMap }) {
                 ['适宜水温', sp ? `${sp.waterTempMin}-${sp.waterTempMax}℃` : '-'],
                 ['月相', forecast.weatherMeta?.moonPhaseName || '-'],
               ].map(([k, v]) => (
-                <div key={k} style={{ background: 'rgba(4,24,33,0.45)', borderRadius: 10, padding: '8px 10px' }}>
+                <div key={k} style={{ background: 'var(--cell-bg)', borderRadius: 10, padding: '8px 10px' }}>
                   <div className="muted" style={{ fontSize: 10.5 }}>{k}</div>
                   <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{v}</div>
                 </div>
@@ -275,7 +275,7 @@ function EnvGrid({ hourly, sp }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
       {cells.map(([k, v, icon]) => (
-        <div key={k} style={{ background: 'rgba(4,24,33,0.45)', borderRadius: 10, padding: '8px 4px', textAlign: 'center' }}>
+        <div key={k} style={{ background: 'var(--cell-bg)', borderRadius: 10, padding: '8px 4px', textAlign: 'center' }}>
           <div style={{ fontSize: 15 }}>{icon}</div>
           <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>{v}</div>
           <div className="muted" style={{ fontSize: 9.5 }}>{k}</div>

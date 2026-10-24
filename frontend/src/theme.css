@@ -20,6 +20,19 @@
   --blue-dim: rgba(76, 184, 232, 0.15);
   --radius: 16px;
   --tabbar-h: 62px;
+  /* 软格/分段背景（深色默认；.page 内自动翻转为浅色） */
+  --cell-bg: rgba(4, 24, 33, 0.45);
+  --seg-bg: rgba(4, 24, 33, 0.6);
+  /* 浅色内容区变量（天气/钓友圈/我的，与首页浅面板统一） */
+  --panel-bg: #f4f7f5;
+  --panel-card: #ffffff;
+  --panel-line: #e3e9e7;
+  --panel-line-strong: #cdd8d5;
+  --panel-text: #17242b;
+  --panel-text-2: #4a606b;
+  --panel-text-3: #7d929b;
+  --panel-cell: rgba(10, 47, 62, 0.045);
+  --panel-green: #1a9e6b;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -62,6 +75,20 @@ input, textarea, select { font-family: inherit; color: inherit; }
   overflow-x: hidden;
   padding: 0 16px calc(var(--tabbar-h) + 24px);
   scrollbar-width: none;
+  /* 浅色内容区：变量翻转，使深色主题组件在浅面板上协调（与首页 .home-panel 一致） */
+  --text: var(--panel-text);
+  --text-2: var(--panel-text-2);
+  --text-3: var(--panel-text-3);
+  --bg-card: var(--panel-card);
+  --bg-card-solid: #ffffff;
+  --bg-elevated: #eef2f0;
+  --line: var(--panel-line);
+  --line-strong: var(--panel-line-strong);
+  --cell-bg: var(--panel-cell);
+  --seg-bg: #eef2f0;
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  animation: page-fade 0.3s ease both;
 }
 .page::-webkit-scrollbar { display: none; }
 
@@ -458,3 +485,64 @@ textarea.input { resize: none; min-height: 88px; }
 .notice-item b { font-size: 13px; }
 .notice-item p { font-size: 11.5px; color: var(--text-3); margin-top: 2px; line-height: 1.6; }
 .ni-ico { font-size: 20px; }
+
+/* ================= 浅色内容区覆盖（天气/钓友圈/我的） ================= */
+.page .topbar {
+  background: linear-gradient(180deg, rgba(244,247,245,0.98) 0%, rgba(244,247,245,0.92) 76%, rgba(244,247,245,0) 100%);
+  backdrop-filter: blur(10px);
+}
+.page .card { box-shadow: 0 2px 12px rgba(10,47,62,0.05); backdrop-filter: none; }
+.page .chip { background: #eef2f0; border-color: var(--panel-line); color: var(--panel-text-2); }
+.page .chip.active { background: var(--green-dim); border-color: var(--green); color: var(--panel-green); }
+.page .input { background: #fff; border-color: var(--panel-line); color: var(--panel-text); }
+.page .input::placeholder { color: var(--panel-text-3); }
+.page .sheet { box-shadow: 0 -10px 44px rgba(10,47,62,0.2); }
+.page .notice-item { background: #fff; }
+.page .map-ctrl { background: rgba(255,255,255,0.96); color: var(--panel-text-2); border-color: var(--panel-line); }
+
+/* ================= DOM 进出场动画 ================= */
+@keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sheet-out { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+@keyframes mask-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes tab-pop { 0% { transform: scale(1); } 45% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes hero-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 页面切换：内容块自下而上依次浮现（stagger），topbar/spinner/sheet 除外 */
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask) { animation: fade-up 0.5s cubic-bezier(0.22,0.8,0.3,1) both; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(1) { animation-delay: 0.00s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(2) { animation-delay: 0.04s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(3) { animation-delay: 0.08s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(4) { animation-delay: 0.12s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(5) { animation-delay: 0.16s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(6) { animation-delay: 0.20s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(7) { animation-delay: 0.24s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(8) { animation-delay: 0.28s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(9) { animation-delay: 0.32s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(10) { animation-delay: 0.36s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(11) { animation-delay: 0.40s; }
+.page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask):nth-child(12) { animation-delay: 0.44s; }
+
+/* Sheet 退场 */
+.sheet.closing { animation: sheet-out 0.24s cubic-bezier(0.4,0,1,1) forwards; }
+.sheet-mask.closing { animation: mask-out 0.24s ease forwards; }
+
+/* 底部 Tab 选中图标弹跳 */
+.tabbar-item.active svg { animation: tab-pop 0.4s ease; }
+
+/* 瀑布流卡片淡入 */
+.feed-card { animation: fade-up 0.45s ease both; }
+
+/* 首页 hero 元素依次入场 */
+.home-hero .home-topline,
+.home-hero .method-seg,
+.home-hero .score-hero,
+.home-hero .golden-row { animation: hero-in 0.5s cubic-bezier(0.22,0.8,0.3,1) both; }
+.home-hero .home-topline { animation-delay: 0.02s; }
+.home-hero .method-seg { animation-delay: 0.09s; }
+.home-hero .score-hero { animation-delay: 0.16s; }
+.home-hero .golden-row { animation-delay: 0.24s; }
+.home-panel .quick-grid { animation: fade-up 0.5s 0.30s cubic-bezier(0.22,0.8,0.3,1) both; }
+.home-panel .tank-promo { animation: fade-up 0.5s 0.38s cubic-bezier(0.22,0.8,0.3,1) both; }
+.home-panel .nearby-head { animation: fade-up 0.5s 0.44s cubic-bezier(0.22,0.8,0.3,1) both; }
+.home-panel .nearby-list { animation: fade-up 0.5s 0.50s cubic-bezier(0.22,0.8,0.3,1) both; }

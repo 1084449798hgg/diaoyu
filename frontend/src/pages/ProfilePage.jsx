@@ -187,7 +187,7 @@ export default function ProfilePage({ onPublish }) {
             ['最大单尾', s.maxCatch ? `${s.maxCatch.species} ${s.maxCatch.weightKg}kg` : '暂无记录', '⚖️'],
             ['本月出钓', `${s.monthFishDays} 天`, '📅'],
           ].map(([k, v, icon]) => (
-            <div key={k} style={{ background: 'rgba(4,24,33,0.45)', borderRadius: 12, padding: '10px 12px' }}>
+            <div key={k} style={{ background: 'var(--cell-bg)', borderRadius: 12, padding: '10px 12px' }}>
               <div className="muted" style={{ fontSize: 10.5 }}>{icon} {k}</div>
               <div style={{ fontSize: 16, fontWeight: 800, marginTop: 3 }}>{v}</div>
             </div>
@@ -265,7 +265,7 @@ export default function ProfilePage({ onPublish }) {
           </div>
           {l.weatherSnapshot && Object.keys(l.weatherSnapshot).length > 0 && (
             <div style={{
-              marginTop: 8, background: 'rgba(4,24,33,0.45)', borderRadius: 10, padding: '8px 10px',
+              marginTop: 8, background: 'var(--cell-bg)', borderRadius: 10, padding: '8px 10px',
               display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11.5, color: 'var(--text-2)',
             }}>
               <span>🌡️ {l.weatherSnapshot.temp}℃</span>
@@ -368,13 +368,13 @@ export default function ProfilePage({ onPublish }) {
 
       {/* 鱼种图鉴 */}
       <Sheet open={encOpen} title={`📖 鱼种图鉴 ${s.encyclopediaUnlocked}/${s.encyclopediaTotal}`} onClose={() => setEncOpen(false)}>
-        <div style={{ height: 8, borderRadius: 4, background: 'rgba(4,24,33,0.6)', marginBottom: 12 }}>
+        <div style={{ height: 8, borderRadius: 4, background: 'var(--cell-bg)', marginBottom: 12 }}>
           <div style={{ width: `${encPct}%`, height: '100%', borderRadius: 4, background: 'var(--green)' }} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
           {(enc?.items || []).map((it) => (
             <div key={it.id} style={{
-              background: it.unlocked ? 'var(--green-dim)' : 'rgba(4,24,33,0.45)',
+              background: it.unlocked ? 'var(--green-dim)' : 'var(--cell-bg)',
               border: `1px solid ${it.unlocked ? 'var(--green)' : 'var(--line)'}`,
               borderRadius: 10, padding: '8px 2px', textAlign: 'center',
             }}>

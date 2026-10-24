@@ -170,7 +170,7 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
             <article key={c.id} className="feed-card">
               <div style={{
                 height: c.imageUrls?.[0] ? 118 : 56, borderRadius: '10px 10px 0 0', overflow: 'hidden',
-                background: 'linear-gradient(135deg, #0e4d6e, #0a3547)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'linear-gradient(135deg, #dfe9e6, #cfe0da)', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {c.imageUrls?.[0]
                   ? <img src={c.imageUrls[0]} alt={c.fishSpecies} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -299,7 +299,7 @@ function TidePanel() {
       {tide.tides.map((t, i) => (
         <div key={i} style={{
           display: 'flex', justifyContent: 'space-between', padding: '10px 12px', marginBottom: 8,
-          background: t.type === '高潮' ? 'var(--green-dim)' : 'rgba(4,24,33,0.45)', borderRadius: 10,
+          background: t.type === '高潮' ? 'var(--green-dim)' : 'var(--cell-bg)', borderRadius: 10,
         }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{t.type} {t.time}</span>
           <span className="muted" style={{ fontSize: 12 }}>潮高 {t.height}m</span>

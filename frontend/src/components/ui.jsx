@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 /** 分数圆环 */
 export function ScoreRing({ score, level, size = 96 }) {
@@ -37,11 +37,26 @@ export function ReliabilityBadge({ level }) {
 }
 
 export function Sheet({ open, title, onClose, children }) {
-  if (!open) return null;
+  const [visible, setVisible] = useState(open);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+      setClosing(false);
+    } else if (visible) {
+      // 退场动画：先播 closing，240ms 后真正卸载
+      setClosing(true);
+      const t = setTimeout(() => { setVisible(false); setClosing(false); }, 240);
+      return () => clearTimeout(t);
+    }
+  }, [open, visible]);
+
+  if (!visible) return null;
   return (
     <>
-      <div className="sheet-mask" onClick={onClose} />
-      <div className="sheet">
+      <div className={`sheet-mask${closing ? ' closing' : ''}`} onClick={onClose} />
+      <div className={`sheet${closing ? ' closing' : ''}`}>
         <div className="sheet-handle" />
         {title && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -57,7 +72,7 @@ export function Sheet({ open, title, onClose, children }) {
 
 export function Segmented({ options, value, onChange }) {
   return (
-    <div style={{ display: 'flex', background: 'rgba(4,24,33,0.6)', borderRadius: 12, padding: 3, gap: 2 }}>
+    <div style={{ display: 'flex', background: 'var(--seg-bg)', borderRadius: 12, padding: 3, gap: 2 }}>
       {options.map((o) => (
         <button
           key={o.value}
