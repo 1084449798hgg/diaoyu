@@ -8,7 +8,7 @@ const USER_LNG = 119.05;
 const USER_LAT = 29.6;
 
 /** 赛博鱼缸里游动的鱼 */
-function TankFish({ fish }) {
+function TankFish({ fish, label = true }) {
   const size = fish.weightKg ? Math.min(34, 14 + fish.weightKg * 5) : 18;
   const dur = 6 + (fish.id % 5);
   return (
@@ -20,12 +20,14 @@ function TankFish({ fish }) {
       <span style={{ fontSize: size, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.35))' }}>
         {fish.weightKg && fish.weightKg >= 2 ? '🐟' : '🐠'}
       </span>
-      <span style={{
-        fontSize: 8, color: '#17392a', marginTop: 1, fontWeight: 700, whiteSpace: 'nowrap',
-        background: 'rgba(255,255,255,.7)', borderRadius: 4, padding: '1px 5px',
-      }}>
-        {fish.species}{fish.weightKg ? ` ${fish.weightKg}kg` : ''}
-      </span>
+      {label && (
+        <span style={{
+          fontSize: 8, color: '#17392a', marginTop: 1, fontWeight: 700, whiteSpace: 'nowrap',
+          background: 'rgba(255,255,255,.7)', borderRadius: 4, padding: '1px 5px',
+        }}>
+          {fish.species}{fish.weightKg ? ` ${fish.weightKg}kg` : ''}
+        </span>
+      )}
     </div>
   );
 }
@@ -275,7 +277,7 @@ export default function ProfilePage({ onPublish }) {
             border: '1px solid var(--hair)', boxShadow: 'var(--shadow-card)',
           }}>
             <div style={{ position: 'absolute', left: '-10%', right: '-10%', bottom: '-14%', height: '52%', borderRadius: '50% 50% 0 0', background: 'rgba(255,255,255,.24)' }} />
-            {me.fishTank.map((f) => <TankFish key={f.id} fish={f} />)}
+            {me.fishTank.map((f) => <TankFish key={f.id} fish={f} label={false} />)}
             {me.fishTank.length === 0 && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <Icon name="tank" size={28} color="rgba(20,50,35,.4)" />
