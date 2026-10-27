@@ -1,10 +1,24 @@
 import React, { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 
-const GREEN = '#35c48d';
-const BLUE = '#4cb8e8';
-const AMBER = '#f0b44c';
-const RED = '#e5534b';
+/* 浅色高级主题配色 */
+const INK = '#0d1512';
+const INK_2 = '#5c6862';
+const MUTED = '#97a09a';
+const HAIR = '#e8ebe4';
+const LIME = '#c4ea25';
+const LIME_SOFT = 'rgba(196,234,37,0.16)';
+const GREEN = '#4a7c3f';
+const SERIES = ['#0d1512', '#4a7c3f', '#a8823c', '#8a6a8f'];
+
+const TOOLTIP = {
+  backgroundColor: 'rgba(255,255,255,0.97)',
+  borderColor: '#e8ebe4',
+  borderWidth: 1,
+  padding: [9, 12],
+  extraCssText: 'box-shadow:0 10px 30px rgba(13,26,21,.12);border-radius:12px;',
+  textStyle: { color: INK, fontSize: 11.5 },
+};
 
 /** 逐小时开口概率曲线（最佳窗口高亮；multi 传入时用于鱼种对比） */
 export function ProbabilityChart({ hourly, bestWindow, multi }) {
@@ -14,34 +28,27 @@ export function ProbabilityChart({ hourly, bestWindow, multi }) {
     const chart = echarts.init(ref.current, null, { renderer: 'canvas' });
 
     if (multi?.length) {
-      // 鱼种对比：多条曲线叠加
-      const colors = [GREEN, BLUE, AMBER, RED];
       const hours = multi[0].hourly.map((h) => `${h.hour}:00`);
       chart.setOption({
-        grid: { left: 36, right: 14, top: 30, bottom: 24 },
-        legend: { textStyle: { color: '#a9c8d4', fontSize: 11 }, top: 0 },
-        tooltip: {
-          trigger: 'axis',
-          backgroundColor: 'rgba(5,29,40,0.95)',
-          borderColor: 'rgba(120,200,220,0.3)',
-          textStyle: { color: '#eaf6fa', fontSize: 12 },
-        },
+        grid: { left: 34, right: 12, top: 30, bottom: 22 },
+        legend: { textStyle: { color: INK_2, fontSize: 10.5 }, top: 0, itemWidth: 12, itemHeight: 3 },
+        tooltip: { ...TOOLTIP, trigger: 'axis' },
         xAxis: {
           type: 'category', data: hours, boundaryGap: false,
-          axisLine: { lineStyle: { color: 'rgba(120,200,220,0.2)' } },
-          axisLabel: { color: '#6f95a5', fontSize: 10, interval: 2 },
+          axisLine: { lineStyle: { color: HAIR } },
+          axisLabel: { color: MUTED, fontSize: 9.5, interval: 2 },
           axisTick: { show: false },
         },
         yAxis: {
           type: 'value', min: 0, max: 100, interval: 25,
-          axisLabel: { color: '#6f95a5', fontSize: 10 },
-          splitLine: { lineStyle: { color: 'rgba(120,200,220,0.08)' } },
+          axisLabel: { color: MUTED, fontSize: 9.5 },
+          splitLine: { lineStyle: { color: '#f2f4ee' } },
         },
         series: multi.map((m, i) => ({
           name: m.species, type: 'line', smooth: true, symbol: 'circle', symbolSize: 4,
           data: m.hourly.map((h) => h.score),
-          lineStyle: { width: 2.5, color: colors[i % colors.length] },
-          itemStyle: { color: colors[i % colors.length] },
+          lineStyle: { width: 2.4, color: SERIES[i % SERIES.length] },
+          itemStyle: { color: SERIES[i % SERIES.length], borderColor: '#fff', borderWidth: 1.2 },
         })),
       });
       const onResize = () => chart.resize();
@@ -52,7 +59,6 @@ export function ProbabilityChart({ hourly, bestWindow, multi }) {
     if (!hourly?.length) return;
     const hours = hourly.map((h) => `${h.hour}:00`);
     const scores = hourly.map((h) => h.score);
-    // markArea 需要成对端点对象
     let markArea = [];
     if (bestWindow) {
       const endIdx = hourly.findIndex((h) => h.hour === bestWindow.end);
@@ -61,50 +67,48 @@ export function ProbabilityChart({ hourly, bestWindow, multi }) {
         markArea = [[
           {
             xAxis: `${bestWindow.start}:00`,
-            itemStyle: { color: 'rgba(53,196,141,0.10)' },
-            label: { show: true, position: 'insideTop', color: GREEN, fontSize: 10, formatter: '最佳窗口' },
+            itemStyle: { color: LIME_SOFT },
+            label: { show: true, position: 'insideTop', color: '#6f8a25', fontSize: 9.5, fontWeight: 700, formatter: '黄金窗口' },
           },
           { xAxis: nextHour },
         ]];
       }
     }
     chart.setOption({
-      grid: { left: 36, right: 14, top: 30, bottom: 24 },
+      grid: { left: 34, right: 12, top: 28, bottom: 22 },
       tooltip: {
+        ...TOOLTIP,
         trigger: 'axis',
-        backgroundColor: 'rgba(5,29,40,0.95)',
-        borderColor: 'rgba(120,200,220,0.3)',
-        textStyle: { color: '#eaf6fa', fontSize: 12 },
         formatter: (params) => {
           const p = params[0];
           const h = hourly[p.dataIndex];
-          return `${h.hour}:00 · ${h.score}分（${h.level}）<br/>气压 ${h.pressure}hPa · ${h.windDir}风${h.windSpeed}m/s<br/>估算水温 ${h.waterTemp}℃`;
+          return `<b>${h.hour}:00 · ${h.score} 分</b><br/><span style="color:#5c6862">气压 ${h.pressure}hPa · ${h.windDir}风${h.windSpeed}m/s</span><br/><span style="color:#5c6862">估算水温 ${h.waterTemp}℃</span>`;
         },
       },
       xAxis: {
         type: 'category', data: hours, boundaryGap: false,
-        axisLine: { lineStyle: { color: 'rgba(120,200,220,0.2)' } },
-        axisLabel: { color: '#6f95a5', fontSize: 10, interval: 2 },
+        axisLine: { lineStyle: { color: HAIR } },
+        axisLabel: { color: MUTED, fontSize: 9.5, interval: 2 },
         axisTick: { show: false },
       },
       yAxis: {
         type: 'value', min: 0, max: 100, interval: 25,
-        axisLabel: { color: '#6f95a5', fontSize: 10 },
-        splitLine: { lineStyle: { color: 'rgba(120,200,220,0.08)' } },
+        axisLabel: { color: MUTED, fontSize: 9.5 },
+        splitLine: { lineStyle: { color: '#f2f4ee' } },
       },
       series: [{
         type: 'line', data: scores, smooth: true, symbol: 'circle', symbolSize: 5,
-        lineStyle: { width: 3, color: GREEN },
-        itemStyle: { color: GREEN, borderColor: '#04202b', borderWidth: 1.5 },
+        lineStyle: { width: 2.6, color: INK },
+        itemStyle: { color: INK, borderColor: '#fff', borderWidth: 1.4 },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(53,196,141,0.35)' },
-            { offset: 1, color: 'rgba(53,196,141,0.02)' },
+            { offset: 0, color: 'rgba(196,234,37,0.42)' },
+            { offset: 1, color: 'rgba(196,234,37,0.02)' },
           ]),
         },
         markLine: {
           silent: true, symbol: 'none',
-          data: [{ yAxis: 82, lineStyle: { color: 'rgba(53,196,141,0.5)', type: 'dashed' }, label: { show: false } }],
+          data: [{ yAxis: 82, lineStyle: { color: 'rgba(196,234,37,0.75)', type: 'dashed', width: 1 }, label: { show: false } }],
         },
         markArea: { silent: true, data: markArea },
       }],
@@ -127,45 +131,43 @@ export function PressureChart({ trend }) {
     const firstToday = trend.findIndex((p) => p.isToday);
     const markArea = firstToday > 0
       ? [[
-          { xAxis: firstToday - 1, itemStyle: { color: 'rgba(76,184,232,0.08)' } },
+          { xAxis: firstToday - 1, itemStyle: { color: 'rgba(196,234,37,0.08)' } },
           { xAxis: labels.length - 1 },
         ]]
       : [];
     chart.setOption({
-      grid: { left: 44, right: 14, top: 26, bottom: 22 },
+      grid: { left: 40, right: 14, top: 26, bottom: 20 },
       tooltip: {
+        ...TOOLTIP,
         trigger: 'axis',
-        backgroundColor: 'rgba(5,29,40,0.95)',
-        borderColor: 'rgba(120,200,220,0.3)',
-        textStyle: { color: '#eaf6fa', fontSize: 12 },
-        formatter: (params) => `${labels[params[0].dataIndex]}<br/>气压 ${params[0].value} hPa`,
+        formatter: (params) => `${labels[params[0].dataIndex]}<br/><b>气压 ${params[0].value} hPa</b>`,
       },
       xAxis: {
         type: 'category', data: labels, boundaryGap: false,
-        axisLine: { lineStyle: { color: 'rgba(120,200,220,0.2)' } },
-        axisLabel: { color: '#6f95a5', fontSize: 9, interval: 7 },
+        axisLine: { lineStyle: { color: HAIR } },
+        axisLabel: { color: MUTED, fontSize: 8.5, interval: 7 },
         axisTick: { show: false },
       },
       yAxis: {
         type: 'value', scale: true,
-        axisLabel: { color: '#6f95a5', fontSize: 10, formatter: '{value}' },
-        splitLine: { lineStyle: { color: 'rgba(120,200,220,0.08)' } },
+        axisLabel: { color: MUTED, fontSize: 9.5, formatter: '{value}' },
+        splitLine: { lineStyle: { color: '#f2f4ee' } },
       },
       series: [{
         type: 'line', data: pressures, smooth: true, symbol: 'none',
-        lineStyle: { width: 2.5, color: BLUE },
+        lineStyle: { width: 2.2, color: GREEN },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(76,184,232,0.28)' },
-            { offset: 1, color: 'rgba(76,184,232,0.02)' },
+            { offset: 0, color: 'rgba(74,124,63,0.22)' },
+            { offset: 1, color: 'rgba(74,124,63,0.01)' },
           ]),
         },
         markArea: { silent: true, data: markArea },
         markLine: {
           silent: true, symbol: 'none',
           data: [
-            { yAxis: 1020, lineStyle: { color: 'rgba(240,180,76,0.4)', type: 'dashed' }, label: { color: '#6f95a5', fontSize: 9, formatter: '1020 上限' } },
-            { yAxis: 1000, lineStyle: { color: 'rgba(240,180,76,0.4)', type: 'dashed' }, label: { color: '#6f95a5', fontSize: 9, formatter: '1000 下限' } },
+            { yAxis: 1020, lineStyle: { color: 'rgba(168,130,60,0.4)', type: 'dashed' }, label: { color: MUTED, fontSize: 8.5, formatter: '1020' } },
+            { yAxis: 1000, lineStyle: { color: 'rgba(168,130,60,0.4)', type: 'dashed' }, label: { color: MUTED, fontSize: 8.5, formatter: '1000' } },
           ],
         },
       }],
@@ -179,14 +181,14 @@ export function PressureChart({ trend }) {
 
 /** 小评分条（用于因子展示） */
 export function FactorBar({ score, label, direction }) {
-  const color = direction === 'positive' ? GREEN : AMBER;
+  const color = direction === 'positive' ? LIME : '#a8823c';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-      <span style={{ width: 108, color: 'var(--text-2)', flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(4,24,33,0.7)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5 }}>
+      <span style={{ width: 108, color: 'var(--ink-2)', flexShrink: 0 }}>{label}</span>
+      <div style={{ flex: 1, height: 5, borderRadius: 3, background: 'var(--surface-2)', overflow: 'hidden' }}>
         <div style={{ width: `${score}%`, height: '100%', background: color, borderRadius: 3 }} />
       </div>
-      <span style={{ width: 26, textAlign: 'right', color, fontWeight: 700 }}>{score}</span>
+      <span style={{ width: 26, textAlign: 'right', color: 'var(--ink)', fontWeight: 700 }}>{score}</span>
     </div>
   );
 }

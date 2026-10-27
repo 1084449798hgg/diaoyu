@@ -6,28 +6,21 @@ import CommunityPage from './pages/CommunityPage.jsx';
 import MapPage from './pages/MapPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import PublishPage from './pages/PublishPage.jsx';
+import Icon from './components/icons.jsx';
 
-/** 5 Tab 结构（对齐参考竞品 v3）：首页 / 天气 / 钓友圈 / 地图 / 我的 */
+/** 5 Tab 结构：首页 / 天气 / 钓友圈 / 地图 / 我的 */
 const TABS = [
-  { key: 'home', label: '首页', icon: 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10' },
-  { key: 'weather', label: '天气', icon: 'M6 14a4 4 0 014-4 5 5 0 019.6 1.3A3.5 3.5 0 0118.5 19H7a3.5 3.5 0 01-1-5z' },
-  { key: 'community', label: '钓友圈', icon: 'M4 5h16v11H8l-4 4z' },
-  { key: 'map', label: '地图', icon: 'M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z' },
-  { key: 'profile', label: '我的', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zm-8 8c0-3.3 3.6-6 8-6s8 2.7 8 6' },
+  { key: 'home', label: '首页', icon: 'home' },
+  { key: 'weather', label: '天气', icon: 'cloud' },
+  { key: 'community', label: '钓友圈', icon: 'message' },
+  { key: 'map', label: '地图', icon: 'pin' },
+  { key: 'profile', label: '我的', icon: 'user' },
 ];
-
-function TabIcon({ d, active }) {
-  return (
-    <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d={d} />
-    </svg>
-  );
-}
 
 export default function App() {
   const [tab, setTab] = useState('home');
   const [publishing, setPublishing] = useState(false);
-  const [communityFilter, setCommunityFilter] = useState(null); // { spotId, spotName } 从地图/预报跳转
+  const [communityFilter, setCommunityFilter] = useState(null);
   const { user } = useAuth();
 
   if (!user) {
@@ -88,19 +81,17 @@ export default function App() {
       )}
       {tab === 'profile' && <ProfilePage onPublish={() => setPublishing(true)} />}
 
-      {/* 悬浮发布按钮（钓友圈） */}
+      {/* 悬浮发布 */}
       {tab === 'community' && (
         <button className="fab" onClick={() => setPublishing(true)} aria-label="晒鱼获">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Icon name="plus" size={24} strokeWidth={2.4} />
         </button>
       )}
 
       <nav className="tabbar">
         {TABS.map((t) => (
           <button key={t.key} className={`tabbar-item ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
-            <TabIcon d={t.icon} active={tab === t.key} />
+            <Icon name={t.icon} size={21} strokeWidth={tab === t.key ? 2.1 : 1.65} />
             <span>{t.label}</span>
           </button>
         ))}
@@ -129,29 +120,50 @@ function LoginScreen() {
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontSize: 52, lineHeight: 1 }}>🎣</div>
-        <h1 style={{ fontSize: 26, margin: '14px 0 6px', letterSpacing: 1 }}>鱼情预报</h1>
-        <p className="muted">逐小时开口概率 · 气压趋势 · 最佳窗口</p>
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
+      background: 'radial-gradient(90% 60% at 80% 0%, rgba(216,248,79,.13), transparent 58%), linear-gradient(168deg, #16342a 0%, #0d1a15 55%, #08120e 100%)',
+    }}>
+      {/* 水波纹装饰 */}
+      <svg viewBox="0 0 390 300" style={{ position: 'absolute', left: 0, right: 0, bottom: -40, width: '100%', opacity: .5 }}>
+        <path d="M0 180c60-24 110 12 170-8s120-36 220-6" fill="none" stroke="rgba(216,248,79,.18)" strokeWidth="1.4" />
+        <path d="M0 210c70-26 120 14 180-10s130-38 210-4" fill="none" stroke="rgba(216,248,79,.12)" strokeWidth="1.4" />
+        <path d="M0 240c80-28 130 16 196-12s126-40 194-2" fill="none" stroke="rgba(216,248,79,.08)" strokeWidth="1.4" />
+      </svg>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 26px', position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: 30 }}>
+          <div style={{ width: 62, height: 62, borderRadius: 20, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(216,248,79,.1)', border: '1px solid rgba(216,248,79,.24)' }}>
+            <Icon name="fish" size={30} color="var(--lime)" strokeWidth={1.4} />
+          </div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 900, letterSpacing: '.16em', color: '#fff', lineHeight: 1.1 }}>钓鱼佬</div>
+          <div style={{ fontSize: 8, letterSpacing: '.3em', color: 'rgba(216,248,79,.8)', fontWeight: 700, marginTop: 9 }}>ANGLER · FISH FORECAST</div>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 12, lineHeight: 1.7 }}>
+            逐小时开口概率 · 黄金窗口 · 水温与潮汐
+          </p>
+        </div>
+
+        <div style={{ background: '#fff', borderRadius: 26, padding: '22px 20px 20px', boxShadow: '0 24px 60px rgba(0,0,0,.3)' }}>
+          <div className="field" style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.1em', display: 'block', marginBottom: 7 }}>手机号</label>
+            <input className="input" value={phone} maxLength={11} inputMode="numeric" placeholder="请输入手机号"
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} />
+          </div>
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.1em', display: 'block', marginBottom: 7 }}>验证码 · 演示固定 123456</label>
+            <input className="input" value={code} maxLength={6} inputMode="numeric" placeholder="6 位验证码"
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
+          </div>
+          {err && <p style={{ fontSize: 11, color: '#b23b3b', margin: '0 0 10px' }}>{err}</p>}
+          <button className="p-btn p-btn-lime p-btn-block" style={{ height: 50 }} disabled={loading} onClick={submit}>
+            {loading ? '登录中…' : '登录 / 注册'}
+          </button>
+        </div>
+
+        <p style={{ textAlign: 'center', fontSize: 9.5, color: 'rgba(255,255,255,.32)', marginTop: 22, lineHeight: 1.9 }}>
+          登录即代表同意《用户协议》和《隐私政策》<br />定位、相机、相册权限将在首次使用时说明用途
+        </p>
       </div>
-      <div className="field">
-        <label className="field-label">手机号</label>
-        <input className="input" value={phone} maxLength={11} inputMode="numeric" placeholder="请输入手机号"
-          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} />
-      </div>
-      <div className="field">
-        <label className="field-label">验证码（演示环境固定 123456）</label>
-        <input className="input" value={code} maxLength={6} inputMode="numeric" placeholder="6 位验证码"
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
-      </div>
-      {err && <p className="red-text" style={{ fontSize: 13, marginTop: 0 }}>{err}</p>}
-      <button className="btn btn-primary btn-block" style={{ marginTop: 10, padding: '13px' }} disabled={loading} onClick={submit}>
-        {loading ? '登录中…' : '登录 / 注册'}
-      </button>
-      <p className="muted" style={{ textAlign: 'center', marginTop: 22, lineHeight: 1.7 }}>
-        登录即代表同意《用户协议》和《隐私政策》<br />定位、相机、相册权限将在首次使用时说明用途
-      </p>
     </div>
   );
 }

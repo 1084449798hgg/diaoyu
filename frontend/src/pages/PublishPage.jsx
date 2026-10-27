@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../api.js';
 import { useToast } from '../store.jsx';
 import { Segmented } from '../components/ui.jsx';
+import Icon from '../components/icons.jsx';
 
 const USER_LNG = 119.05;
 const USER_LAT = 29.6;
@@ -115,9 +116,9 @@ export default function PublishPage({ onClose, onPublished }) {
           <div key={t} style={{ flex: 1 }}>
             <div style={{
               height: 4, borderRadius: 2,
-              background: i < step ? 'var(--green)' : 'rgba(120,200,220,0.15)',
+              background: i < step ? 'var(--lime-deep)' : 'var(--hair)',
             }} />
-            <div style={{ fontSize: 10.5, marginTop: 5, color: i < step ? 'var(--green)' : 'var(--text-3)' }}>{t}</div>
+            <div style={{ fontSize: 10.5, marginTop: 5, color: i < step ? 'var(--ink)' : 'var(--ink-3)' }}>{t}</div>
           </div>
         ))}
       </div>
@@ -130,9 +131,9 @@ export default function PublishPage({ onClose, onPublished }) {
           <button
             onClick={() => fileRef.current?.click()}
             style={{
-              width: '100%', aspectRatio: '4 / 3', borderRadius: 14, border: '2px dashed var(--line-strong)',
-              background: 'rgba(4,24,33,0.5)', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--text-3)',
+              width: '100%', aspectRatio: '4 / 3', borderRadius: 18, border: '1.5px dashed #d5dccd',
+              background: 'var(--surface-2)', display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--ink-3)',
             }}
           >
             {uploading ? (
@@ -141,9 +142,11 @@ export default function PublishPage({ onClose, onPublished }) {
               <img src={imageUrl} alt="渔获" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
             ) : (
               <>
-                <span style={{ fontSize: 40 }}>📷</span>
-                <span style={{ fontSize: 13 }}>点击拍照 / 从相册选择</span>
-                <span style={{ fontSize: 11 }}>自动压缩至 1MB 内（JPEG 80%）</span>
+                <span style={{ width: 54, height: 54, borderRadius: 999, background: '#fff', border: '1px solid var(--hair)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)' }}>
+                  <Icon name="camera" size={22} />
+                </span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)' }}>点击拍照 / 从相册选择</span>
+                <span style={{ fontSize: 10 }}>自动压缩至 1MB 内（JPEG 80%）</span>
               </>
             )}
           </button>
@@ -157,12 +160,12 @@ export default function PublishPage({ onClose, onPublished }) {
 
           {recognized && !recognized.failed && (
             <div style={{
-              marginTop: 14, background: 'var(--green-dim)', border: '1px solid rgba(53,196,141,0.4)',
+              marginTop: 14, background: 'var(--lime-soft)', border: '1px solid #dcecab',
               borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ fontSize: 18 }}>🎯</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>识别结果：{recognized.species}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: '#4d6318' }}>识别结果：{recognized.species}</div>
                 <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>下一步可修改</div>
               </div>
               <button className="chip" onClick={runRecognize}>重新识别</button>
@@ -171,8 +174,8 @@ export default function PublishPage({ onClose, onPublished }) {
 
           {recognized?.failed && (
             <div style={{
-              marginTop: 14, background: 'var(--amber-dim)', border: '1px solid rgba(240,180,76,0.4)',
-              borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: 'var(--amber)',
+              marginTop: 14, background: 'var(--orange-soft)', border: '1px solid #ffe0c7',
+              borderRadius: 12, padding: '10px 14px', fontSize: 11.5, color: '#a34a00',
             }}>
               ⚠️ 识别失败，不影响发布 —— 下一步手动选择鱼种即可
             </div>

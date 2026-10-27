@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { api } from '../api.js';
 import { useAuth, useToast } from '../store.jsx';
 import { ReliabilityBadge, Sheet, Spinner, Empty } from '../components/ui.jsx';
+import Icon from '../components/icons.jsx';
 
 /* 演示水域边界：杭州 · 千岛湖 */
 const BOUNDS = { lngMin: 118.95, lngMax: 119.25, latMin: 29.43, latMax: 29.67 };
-const W = 1000;
-const H = 760;
+const W = 430;
+const H = 930;
 const USER = { lng: 119.05, lat: 29.6 };
 
 function project(lng, lat) {
@@ -17,11 +18,10 @@ function project(lng, lat) {
 }
 
 const WATER_TYPES = ['全部', '水库', '河流', '湖泊', '黑坑'];
-const SPOT_ICON = { 水库: '🌊', 河流: '🏞️', 湖泊: '💧', 黑坑: '🎯', 近海: '⚓' };
 
 function markerColor(s) {
-  if (s.banned) return '#e5534b';
-  return s.reliability === 1 ? '#35c48d' : s.reliability === 2 ? '#f0b44c' : '#8aa5b0';
+  if (s.banned) return '#ff6a18';
+  return s.reliability === 1 ? '#d8f84f' : s.reliability === 2 ? '#e9f7a8' : '#ffffff';
 }
 
 export default function MapPage({ onNavigateToCommunity }) {
@@ -39,6 +39,7 @@ export default function MapPage({ onNavigateToCommunity }) {
   const [history, setHistory] = useState(false);
   const [compliance, setCompliance] = useState(false);
   const [layerOpen, setLayerOpen] = useState(false);
+  const [hint, setHint] = useState(true);
   const dragRef = useRef(null);
   const longPressRef = useRef(null);
   const suppressClickRef = useRef(false);
@@ -66,6 +67,11 @@ export default function MapPage({ onNavigateToCommunity }) {
     })();
   }, [showToast]);
 
+  useEffect(() => {
+    const t = setTimeout(() => setHint(false), 4200);
+    return () => clearTimeout(t);
+  }, []);
+
   const openDetail = useCallback(async (spot) => {
     setSelected(spot);
     setDetail(null);
@@ -76,13 +82,12 @@ export default function MapPage({ onNavigateToCommunity }) {
 
   const filtered = spots.filter((s) => (filter === '全部' || s.waterType === filter) && (!compliance || s.banned));
 
-  /* ---- 拖拽平移（超阈值才捕获指针，避免 pointer capture 吞掉 marker 点击） ---- */
   function onPointerDown(e) {
     suppressClickRef.current = false;
     dragRef.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y, captured: false };
     longPressRef.current = setTimeout(() => {
       suppressClickRef.current = true;
-      showToast('已收藏该位置标记，可在「我的-收藏」查看', 'success');
+      showToast('已收藏该位置标记', 'success');
     }, 650);
   }
   function onPointerMove(e) {
@@ -90,7 +95,6 @@ export default function MapPage({ onNavigateToCommunity }) {
     clearTimeout(longPressRef.current);
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
-    // 移动超过 6px 判定为拖拽：此时才设置指针捕获，保证拖出画布仍顺畅
     if (!dragRef.current.captured && Math.hypot(dx, dy) > 6) {
       dragRef.current.captured = true;
       suppressClickRef.current = true;
@@ -104,13 +108,11 @@ export default function MapPage({ onNavigateToCommunity }) {
     dragRef.current = null;
     clearTimeout(longPressRef.current);
   }
-  /** marker 点击：刚拖拽过或刚长按过则忽略（避免误触详情） */
   function onMarkerClick(spot) {
     if (suppressClickRef.current) return;
     openDetail(spot);
   }
 
-  /* ---- 聚合：缩放 >=2 时按网格聚合 ---- */
   const clusters = React.useMemo(() => {
     if (scale < 2) return filtered.map((s) => ({ type: 'single', spot: s }));
     const grid = {};
@@ -145,71 +147,78 @@ export default function MapPage({ onNavigateToCommunity }) {
   const [ux, uy] = project(USER.lng, USER.lat);
 
   return (
-    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', background: satellite ? '#071a12' : '#0a2f3e' }}>
-      {/* 顶部搜索栏 */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30, display: 'flex', gap: 8, alignItems: 'center',
-        padding: '12px 12px 0',
-      }}>
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,32,42,0.92)',
-          borderRadius: 10, padding: '9px 12px', fontSize: 12, color: 'var(--text-3)', border: '1px solid var(--line)',
-        }}>
-          🔍 搜索钓点 / 水域
+    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', background: satellite ? '#07160f' : '#0b1512' }}>
+      {/* 顶部搜索胶囊 */}
+      <div className="mp-search">
+        <span className="mp-brand">钓鱼佬</span>
+        <div className="mp-search-line">
+          <Icon name="search" size={13} strokeWidth={2} />
+          搜水库、钓点
         </div>
-        <button className="map-ctrl" onClick={() => showToast('已切换至当前位置', 'info')}>☰</button>
-        <button className="map-ctrl" onClick={() => setLayerOpen(true)}>🛰️ 图层</button>
+        <button className="mp-star" onClick={() => showToast('已收藏 3 个钓点', 'info')}>
+          <Icon name="star" size={15} />
+        </button>
       </div>
 
-      {/* 水域类型筛选 */}
-      <div className="chip-row" style={{ position: 'absolute', top: 52, left: 0, right: 0, zIndex: 25, padding: '0 12px' }}>
+      {/* 水域筛选 */}
+      <div style={{ position: 'absolute', top: 68, left: 0, right: 0, zIndex: 25, display: 'flex', gap: 6, padding: '0 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {WATER_TYPES.map((t) => (
-          <button key={t} className={`chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(t)}
-            style={{ background: 'rgba(6,32,42,0.9)' }}>{t}</button>
+          <button key={t} onClick={() => setFilter(t)}
+            style={{
+              flexShrink: 0, height: 30, padding: '0 13px', borderRadius: 999, fontSize: 10.5, fontWeight: 600,
+              background: filter === t ? 'var(--lime)' : 'rgba(255,255,255,.9)', color: filter === t ? 'var(--forest)' : 'var(--ink-2)',
+              backdropFilter: 'blur(10px)', boxShadow: '0 4px 14px rgba(0,0,0,.16)',
+            }}>{t}</button>
         ))}
       </div>
 
       {loading && <Spinner />}
 
-      {/* 地图主体 */}
+      {/* 地图 */}
       {!loading && (
         <svg
           viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="xMidYMid meet"
           style={{
-            width: '100%', height: '100%', display: 'block', touchAction: 'none', cursor: dragRef.current ? 'grabbing' : 'grab',
-            filter: satellite ? 'saturate(1.4) hue-rotate(8deg)' : history ? 'grayscale(0.85)' : 'none',
-            background: satellite ? '#08251a' : '#0a2f3e',
+            position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block', touchAction: 'none',
+            cursor: dragRef.current ? 'grabbing' : 'grab',
+            filter: satellite ? 'saturate(1.15) hue-rotate(-6deg)' : history ? 'grayscale(.9)' : 'none',
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          <g transform={`translate(${W / 2 + offset.x} ${H / 2 + offset.y}) scale(${scale}) translate(${-W / 2} ${-H / 2})`}>
+          <g transform={`translate(${W / 2 + offset.x} ${H / 2 + offset.y + 26}) scale(${scale}) translate(${-W / 2} ${-H / 2})`}>
             <LakeShapes satellite={satellite} />
 
             {/* 用户定位 */}
             <g transform={`translate(${ux} ${uy})`}>
-              <circle r="26" fill="rgba(76,184,232,0.15)" />
-              <circle r="9" fill="#4cb8e8" stroke="#04202b" strokeWidth="2.5" />
+              <circle r="30" fill="rgba(216,248,79,.14)" />
+              <circle r="26" fill="none" stroke="rgba(216,248,79,.35)" strokeWidth="1.2" />
+              <circle r="7" fill="#d8f84f" stroke="#0b1512" strokeWidth="3" />
             </g>
 
-            {/* 钓点 markers */}
+            {/* markers */}
             {clusters.map((c, i) =>
               c.type === 'single' ? (
                 <g key={c.spot.id} transform={`translate(${project(c.spot.lng, c.spot.lat)[0]} ${project(c.spot.lng, c.spot.lat)[1]})`}
                   style={{ cursor: 'pointer' }} onClick={() => onMarkerClick(c.spot)}>
-                  <circle r="17" fill={markerColor(c.spot)} stroke="#04202b" strokeWidth="2.5" opacity={0.95} />
-                  <text textAnchor="middle" y="5" fontSize="13">{c.spot.banned ? '🚫' : SPOT_ICON[c.spot.waterType] || '📍'}</text>
-                  <text textAnchor="middle" y="30" fontSize="13" fill="#eaf6fa" fontWeight="600" style={{ paintOrder: 'stroke', stroke: '#04202b', strokeWidth: 3 }}>
-                    {c.spot.name.length > 8 ? c.spot.name.slice(0, 8) + '…' : c.spot.name}
+                  <ellipse cx="0" cy="2" rx="9" ry="3.4" fill="rgba(0,0,0,.32)" />
+                  <path
+                    d="M0 0 C-10 -12 -17 -20 -17 -28 A17 17 0 1 1 17 -28 C17 -20 10 -12 0 0 Z"
+                    fill={markerColor(c.spot)} stroke="rgba(11,21,18,.55)" strokeWidth="1.6"
+                  />
+                  <text textAnchor="middle" y="-23" fontSize="12.5" fontWeight="800"
+                    fill={c.spot.banned ? '#fff' : '#1a2a12'}>
+                    {c.spot.banned ? '!' : i + 1}
                   </text>
                 </g>
               ) : (
                 <g key={i} transform={`translate(${c.x} ${c.y})`} style={{ cursor: 'pointer' }}
                   onClick={() => { if (!suppressClickRef.current) setScale((s) => Math.min(4, s * 1.8)); }}>
-                  <circle r="22" fill="rgba(53,196,141,0.25)" stroke="#35c48d" strokeWidth="2" />
-                  <text textAnchor="middle" y="5.5" fontSize="16" fill="#eaf6fa" fontWeight="800">{c.spots.length}</text>
+                  <circle r="21" fill="rgba(216,248,79,.9)" stroke="rgba(11,21,18,.4)" strokeWidth="2" />
+                  <text textAnchor="middle" y="5" fontSize="13" fill="#1a2a12" fontWeight="800">{c.spots.length}</text>
                 </g>
               )
             )}
@@ -217,44 +226,54 @@ export default function MapPage({ onNavigateToCommunity }) {
         </svg>
       )}
 
-      {/* 右侧浮动控件（对齐参考竞品） */}
-      <div style={{ position: 'absolute', right: 10, top: 96, zIndex: 30, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <MapBtn icon="✨" label="AI找钓点" onClick={() => showToast('AI 正在分析气压/水温/鱼道…（演示）', 'info')} />
-        <MapBtn icon="🧭" label="合规" active={compliance} onClick={() => { setCompliance((v) => !v); showToast(compliance ? '已显示全部钓点' : '仅显示禁钓合规信息', 'info'); }} />
-        <MapBtn icon="🛰️" label="卫星" active={satellite} onClick={() => setSatellite((v) => !v)} />
-        <MapBtn icon="🕰️" label="历史影像" active={history} onClick={() => setHistory((v) => !v)} />
-        <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(6,32,42,0.92)', borderRadius: 10, border: '1px solid var(--line)' }}>
-          <button style={{ padding: '7px 0', fontSize: 15, fontWeight: 700 }} onClick={() => setScale((s) => Math.min(4, s * 1.5))}>＋</button>
-          <div style={{ height: 1, background: 'var(--line)' }} />
-          <button style={{ padding: '7px 0', fontSize: 15, fontWeight: 700 }} onClick={() => setScale((s) => Math.max(1, s / 1.5))}>－</button>
+      {/* 右侧控件 */}
+      <div className="mp-side">
+        <button className="mp-ctrl" onClick={() => showToast('地图图层已展开', 'info')}>
+          <Icon name="layers" size={17} /><span>图层</span>
+        </button>
+        <button className={`mp-ctrl ${compliance ? 'on' : ''}`} onClick={() => { setCompliance((v) => !v); showToast(compliance ? '已显示全部钓点' : '仅显示禁钓合规信息', 'info'); }}>
+          <Icon name="shield" size={17} /><span>合规</span>
+        </button>
+        <button className={`mp-ctrl ${history ? 'on' : ''}`} onClick={() => setHistory((v) => !v)}>
+          <Icon name="clock" size={17} /><span>历史</span>
+        </button>
+        <button className={`mp-ctrl ${satellite ? 'on' : ''}`} onClick={() => setSatellite((v) => !v)}>
+          <Icon name="satellite" size={17} /><span>卫星</span>
+        </button>
+        <div className="mp-zoom">
+          <button onClick={() => setScale((s) => Math.min(4, s * 1.5))}>＋</button>
+          <i />
+          <button onClick={() => setScale((s) => Math.max(1, s / 1.5))}>－</button>
         </div>
-        <MapBtn icon="📍" label="定位" onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} />
+        <button className="mp-ctrl" onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}>
+          <Icon name="locate" size={17} /><span>定位</span>
+        </button>
       </div>
 
       {/* 长按提示 */}
-      <div style={{
-        position: 'absolute', left: '50%', bottom: 96, transform: 'translateX(-50%)', zIndex: 25,
-        background: 'rgba(6,32,42,0.9)', borderRadius: 999, padding: '6px 14px', fontSize: 10.5, color: 'var(--text-2)',
-        border: '1px solid var(--line)', whiteSpace: 'nowrap',
-      }}>
-        长按地图收藏标记
-      </div>
+      {hint && (
+        <div className="mp-toast" style={{ animation: 'hx-rise .4s ease both' }}>
+          长按地图也能收藏标记
+        </div>
+      )}
 
-      {/* 底部统计条（对齐参考竞品：水域/钓点/渔获） */}
-      <div style={{
-        position: 'absolute', left: 12, right: 12, bottom: 14, zIndex: 30,
-        background: 'rgba(6,32,42,0.94)', borderRadius: 14, border: '1px solid var(--line)',
-        display: 'flex', padding: '10px 0', backdropFilter: 'blur(10px)',
-      }}>
+      {/* AI 找钓点 */}
+      <button className="mp-ai" onClick={() => showToast('AI 正在分析气压 / 水温 / 鱼道…（演示）', 'info')}>
+        <span className="mp-ai-orb"><Icon name="sparkle" size={16} color="#2a3a10" strokeWidth={2} /></span>
+        <b>AI 找钓点<em>AI SPOT</em></b>
+      </button>
+
+      {/* 底部统计 */}
+      <div className="mp-stats">
         {[
-          ['水域', stats?.waterAreas ?? spots.length, '🌊'],
-          ['钓点', stats?.spots ?? spots.length, '📍'],
-          ['渔获', stats?.catches ?? 0, '🐟'],
-          ['禁钓', stats?.bannedSpots ?? 0, '🚫'],
-        ].map(([label, v, icon]) => (
-          <div key={label} style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: label === '禁钓' ? 'var(--red)' : 'var(--green)' }}>{icon} {v}</div>
-            <div className="muted" style={{ fontSize: 10, marginTop: 1 }}>{label}</div>
+          ['水域', stats?.waterAreas ?? spots.length, 'WATERS'],
+          ['钓点', stats?.spots ?? spots.length, 'SPOTS'],
+          ['渔获', stats?.catches ?? 0, 'CATCHES'],
+        ].map(([k, v, en]) => (
+          <div key={k} className="mp-stat">
+            <b>{v}</b>
+            <span>{k} <span style={{ opacity: .55 }}>{en}</span></span>
+            <i />
           </div>
         ))}
       </div>
@@ -265,66 +284,70 @@ export default function MapPage({ onNavigateToCommunity }) {
       <Sheet open={!!selected} onClose={() => setSelected(null)}>
         {selected && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <h2 style={{ margin: 0, fontSize: 18 }}>{SPOT_ICON[selected.waterType]} {selected.name}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <h2 style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 19, fontWeight: 900, letterSpacing: '.04em' }}>{selected.name}</h2>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
               {selected.banned
-                ? <span className="badge tag-red">🚫 禁钓区域，请勿前往</span>
+                ? <span className="p-pill" style={{ background: 'var(--orange-soft)', color: '#a33c00', borderColor: 'transparent' }}>禁钓区域</span>
                 : <ReliabilityBadge level={selected.reliability} />}
-              <span className="badge tag-blue">{selected.waterType}</span>
-              <span className="badge">{selected.fee}</span>
-              {selected.distance != null && <span className="badge">{(selected.distance / 1000).toFixed(1)}km</span>}
+              <span className="p-pill p-pill-line">{selected.waterType}</span>
+              <span className="p-pill p-pill-line">{selected.fee}</span>
+              {selected.distance != null && <span className="p-pill p-pill-line">{(selected.distance / 1000).toFixed(1)}km</span>}
             </div>
 
             {selected.banned && (
-              <div style={{ background: 'var(--red-dim)', borderRadius: 10, padding: '10px 12px', marginBottom: 12, fontSize: 12, color: '#ffb9b5', lineHeight: 1.6 }}>
-                ⚠️ 该水域为禁钓区域（保护区/禁渔期）。请遵守《渔业法》及当地规定，选择其他钓点。
+              <div style={{ background: 'var(--orange-soft)', borderRadius: 13, padding: '11px 13px', marginBottom: 14, fontSize: 11, color: '#a33c00', lineHeight: 1.7 }}>
+                该水域为禁钓区域（保护区/禁渔期）。请遵守《渔业法》及当地规定，选择其他钓点。
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
               <InfoCell label="水深参考" value={selected.depthRef} />
               <InfoCell label="渔获动态" value={`${selected.catchesCount} 条`} />
               <InfoCell label="经度" value={Number(selected.lng).toFixed(5)} />
               <InfoCell label="纬度" value={Number(selected.lat).toFixed(5)} />
             </div>
 
-            <div style={{ marginBottom: 12 }}>
-              <div className="field-label">鱼种标签</div>
-              <div>{(selected.fishSpecies || []).map((f) => <span key={f} className="tag tag-green">{f}</span>)}</div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 9.5, color: 'var(--ink-3)', marginBottom: 6, letterSpacing: '.06em' }}>鱼种标签</div>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {(selected.fishSpecies || []).map((f) => <span key={f} className="p-pill p-pill-line">{f}</span>)}
+              </div>
             </div>
 
-            <div className="muted" style={{ fontSize: 11, marginBottom: 14 }}>
+            <div style={{ fontSize: 9.5, color: 'var(--ink-3)', marginBottom: 16 }}>
               数据更新于 {new Date(selected.updatedAt).toLocaleString('zh-CN')} · UGC 上报 + 人工审核 + 交叉验证
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => navigate(selected)}>🧭 一键导航</button>
+              <button className="p-btn p-btn-dark" style={{ flex: 1 }} onClick={() => navigate(selected)}>
+                <Icon name="locate" size={14} /> 一键导航
+              </button>
               {!selected.banned && (
-                <button className="btn btn-ghost" style={{ flex: 1 }}
+                <button className="p-btn p-btn-ghost" style={{ flex: 1 }}
                   onClick={() => { setSelected(null); onNavigateToCommunity({ spotId: selected.id, spotName: selected.name }); }}>
-                  🐟 这里钓到了什么
+                  <Icon name="fish" size={14} /> 看渔获
                 </button>
               )}
             </div>
 
-            <button className="btn btn-ghost btn-block" style={{ marginTop: 8, fontSize: 12, color: 'var(--text-3)' }}
+            <button style={{ width: '100%', marginTop: 10, fontSize: 10.5, color: 'var(--ink-3)', padding: '8px 0' }}
               onClick={() => reportSpot(selected)}>举报该钓点信息有误</button>
 
             {detail?.recentCatches?.length > 0 && (
-              <div style={{ marginTop: 14 }}>
-                <div className="field-label">最近渔获</div>
-                <div className="hscroll" style={{ margin: 0, padding: 0 }}>
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 9.5, color: 'var(--ink-3)', marginBottom: 8, letterSpacing: '.06em' }}>最近渔获</div>
+                <div style={{ display: 'flex', gap: 9, overflowX: 'auto', paddingBottom: 4 }}>
                   {detail.recentCatches.map((c) => (
-                    <div key={c.id} style={{ width: 120, flexShrink: 0 }}>
-                      <div style={{ width: 120, height: 84, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-elevated)', marginBottom: 4 }}>
+                    <div key={c.id} style={{ width: 116, flexShrink: 0 }}>
+                      <div style={{ width: 116, height: 82, borderRadius: 12, overflow: 'hidden', background: 'var(--surface-2)', marginBottom: 6 }}>
                         {c.imageUrls?.[0]
                           ? <img src={c.imageUrls[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <div className="empty" style={{ padding: '24px 0', fontSize: 20 }}>🐟</div>}
+                          : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)' }}><Icon name="fish" size={22} /></div>}
                       </div>
-                      <div style={{ fontSize: 12 }}>{c.fishSpecies || '渔获'}</div>
-                      <div className="muted" style={{ fontSize: 10.5 }}>{c.nickname}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700 }}>{c.fishSpecies || '渔获'}</div>
+                      <div style={{ fontSize: 9, color: 'var(--ink-3)' }}>{c.nickname}</div>
                     </div>
                   ))}
                 </div>
@@ -334,17 +357,23 @@ export default function MapPage({ onNavigateToCommunity }) {
         )}
       </Sheet>
 
-      {/* 图层选择 */}
-      <Sheet open={layerOpen} title="🛰️ 地图图层" onClose={() => setLayerOpen(false)}>
+      {/* 图层 */}
+      <Sheet open={layerOpen} title="地图图层" onClose={() => setLayerOpen(false)}>
         {[
           ['标准地图', !satellite && !history, () => { setSatellite(false); setHistory(false); }],
           ['卫星影像', satellite, () => { setSatellite(true); setHistory(false); }],
           ['历史影像', history, () => { setHistory(true); setSatellite(false); }],
           ['合规视图（禁钓区）', compliance, () => setCompliance((v) => !v)],
         ].map(([label, active, fn]) => (
-          <button key={label} className="card" style={{ width: '100%', textAlign: 'left', display: 'block', padding: 12 }}
-            onClick={() => { fn(); setLayerOpen(false); }}>
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>{active ? '✅ ' : '⚪ '}{label}</span>
+          <button key={label} onClick={() => { fn(); setLayerOpen(false); }}
+            style={{
+              width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 15px', marginBottom: 8, borderRadius: 14,
+              background: active ? 'var(--lime-soft)' : 'var(--surface-2)',
+              border: `1px solid ${active ? '#dcecab' : 'transparent'}`,
+            }}>
+            <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700 }}>{label}</span>
+            {active && <Icon name="check" size={15} color="#4d7c3a" strokeWidth={2.4} />}
           </button>
         ))}
       </Sheet>
@@ -352,60 +381,61 @@ export default function MapPage({ onNavigateToCommunity }) {
   );
 }
 
-function MapBtn({ icon, label, active, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      width: 44, background: active ? 'var(--green-dim)' : 'rgba(6,32,42,0.92)', borderRadius: 10,
-      border: `1px solid ${active ? 'var(--green)' : 'var(--line)'}`, padding: '7px 0 5px',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    }}>
-      <span style={{ fontSize: 15 }}>{icon}</span>
-      <span style={{ fontSize: 8.5, color: active ? 'var(--green)' : 'var(--text-2)' }}>{label}</span>
-    </button>
-  );
-}
-
 function InfoCell({ label, value }) {
   return (
-    <div style={{ background: 'var(--cell-bg)', borderRadius: 10, padding: '8px 10px' }}>
-      <div className="muted" style={{ fontSize: 10.5 }}>{label}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{value}</div>
+    <div style={{ background: 'var(--surface-2)', borderRadius: 13, padding: '9px 11px' }}>
+      <div style={{ fontSize: 9, color: 'var(--ink-3)' }}>{label}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 3, fontFamily: 'var(--font-num)', letterSpacing: '-.02em' }}>{value}</div>
     </div>
   );
 }
 
-/** 水域底图（示意） */
+/** 水域底图（竖屏 430×930，深墨绿 + 青绿水域） */
 function LakeShapes({ satellite }) {
-  const water = satellite ? '#0d4a2f' : '#0e4d6e';
+  const water = satellite ? '#15492f' : '#12453a';
+  const deep = satellite ? '#0f3a26' : '#0d3830';
+  const edge = 'rgba(216,248,79,.2)';
   return (
     <g>
-      {/* 千岛湖主湖面 */}
+      <rect x="0" y="0" width={W} height={H} fill={satellite ? '#08170f' : '#0b1512'} />
+
+      {/* 主湖面 */}
       <path
-        d="M400 110 C520 80, 680 100, 745 175 C805 245, 780 370, 715 445 C650 520, 510 545, 430 500 C350 455, 310 340, 335 250 C352 185, 370 138, 400 110 Z"
-        fill={water} stroke="rgba(120,200,220,0.35)" strokeWidth="2.5"
+        d="M245 196c58-10 104 26 108 96 4 78-26 148-92 168-62 19-108-14-116-88-8-72 22-164 100-176z"
+        fill={water} stroke={edge} strokeWidth="1.8"
       />
-      {/* 东南湖区 */}
+      {/* 湖心深水 */}
       <path
-        d="M760 320 C820 300, 880 330, 890 390 C900 450, 850 490, 790 480 C735 470, 715 410, 730 365 C740 340, 748 328, 760 320 Z"
-        fill={water} stroke="rgba(120,200,220,0.3)" strokeWidth="2"
+        d="M252 262c40-6 68 20 68 62 0 46-24 86-64 92-38 6-62-18-62-60 0-44 20-88 58-94z"
+        fill={deep} opacity=".75"
       />
-      {/* 新安江河流 */}
-      <path d="M150 60 C200 130, 190 200, 240 250 C285 295, 300 350, 350 400" fill="none"
-        stroke={water} strokeWidth="16" strokeLinecap="round" opacity="0.85" />
+      {/* 东南湖湾 */}
+      <path
+        d="M322 630c30-10 56 8 58 40 2 34-20 60-50 62-30 1-48-20-44-48 3-24 12-46 36-54z"
+        fill={water} stroke={edge} strokeWidth="1.4"
+      />
+      {/* 新安江 */}
+      <path d="M28 96c34 46 42 92 78 132 20 22 34 40 42 62" fill="none"
+        stroke={water} strokeWidth="13" strokeLinecap="round" opacity=".92" />
+      <path d="M28 96c34 46 42 92 78 132 20 22 34 40 42 62" fill="none"
+        stroke="rgba(150,220,200,.26)" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="5 10" />
       {/* 汾口河湾 */}
-      <path d="M430 560 C470 590, 520 600, 570 640" fill="none"
-        stroke={water} strokeWidth="12" strokeLinecap="round" opacity="0.85" />
+      <path d="M168 748c34 32 66 42 104 62" fill="none" stroke={water} strokeWidth="10" strokeLinecap="round" opacity=".9" />
       {/* 黑坑池 */}
-      <rect x="405" y="555" width="46" height="34" rx="6" fill="#125a7d" stroke="rgba(120,200,220,0.3)" strokeWidth="1.5" />
-      <rect x="272" y="358" width="52" height="38" rx="6" fill="#125a7d" stroke="rgba(120,200,220,0.3)" strokeWidth="1.5" />
-      {/* 网格纹理 */}
-      {Array.from({ length: 9 }, (_, i) => (
-        <line key={'v' + i} x1={i * 125} y1="0" x2={i * 125} y2={H} stroke="rgba(120,200,220,0.05)" strokeWidth="1" />
+      <rect x="316" y="322" width="40" height="30" rx="7" fill="#17564a" stroke={edge} strokeWidth="1.2" />
+      <rect x="140" y="560" width="44" height="32" rx="7" fill="#17564a" stroke={edge} strokeWidth="1.2" />
+
+      {/* 网格 / 等高线 */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <line key={'v' + i} x1={i * 62} y1="0" x2={i * 62} y2={H} stroke="rgba(255,255,255,.035)" strokeWidth="1" />
       ))}
-      {Array.from({ length: 7 }, (_, i) => (
-        <line key={'h' + i} x1="0" y1={i * 127} x2={W} y2={i * 127} stroke="rgba(120,200,220,0.05)" strokeWidth="1" />
+      {Array.from({ length: 16 }, (_, i) => (
+        <line key={'h' + i} x1="0" y1={i * 60} x2={W} y2={i * 60} stroke="rgba(255,255,255,.035)" strokeWidth="1" />
       ))}
-      <text x="30" y="45" fill="rgba(169,200,212,0.5)" fontSize="22" fontWeight="700">千岛湖 · 示意水域图</text>
+      <path d="M0 690c60-26 96-14 140 6s84 14 130-6" fill="none" stroke="rgba(216,248,79,.1)" strokeWidth="1.3" />
+      <path d="M0 812c54-20 92-8 134 12s86 12 126-8" fill="none" stroke="rgba(216,248,79,.08)" strokeWidth="1.3" />
+
+      <text x="22" y="34" fill="rgba(255,255,255,.26)" fontSize="10" fontWeight="700" letterSpacing="2.5">千岛湖 · 示意水域</text>
     </g>
   );
 }

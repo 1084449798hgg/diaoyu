@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import { AuthProvider } from './store.jsx';
 import './theme.css';
+import './premium.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

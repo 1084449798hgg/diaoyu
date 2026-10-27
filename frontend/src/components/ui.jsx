@@ -79,8 +79,8 @@ export function Segmented({ options, value, onChange }) {
           onClick={() => onChange(o.value)}
           style={{
             flex: 1, padding: '7px 0', borderRadius: 9, fontSize: 12.5, fontWeight: 600,
-            background: value === o.value ? 'var(--green)' : 'transparent',
-            color: value === o.value ? '#04202b' : 'var(--text-2)',
+            background: value === o.value ? '#0d1a15' : 'transparent',
+            color: value === o.value ? '#fff' : 'var(--ink-2, #5c6862)',
             transition: 'all 0.15s',
           }}
         >

@@ -1,17 +1,24 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { api } from '../api.js';
 import { useAuth, useToast } from '../store.jsx';
 import { Empty, Spinner, Sheet } from '../components/ui.jsx';
+import Icon from '../components/icons.jsx';
+import FishArt from '../components/fishArt.jsx';
 
-const FILTERS = ['最新', '热门', '好贴', '晒单', '杭州市'];
+const FILTERS = [
+  { key: '推荐', en: 'FOR YOU' },
+  { key: '最新', en: 'LATEST' },
+  { key: '热门', en: 'HOT' },
+  { key: '晒单', en: 'PHOTO' },
+];
 
 const QUICK_ACTIONS = [
-  { key: 'tank', icon: '🐠', label: '玩赛博鱼缸', target: 'profile' },
-  { key: 'wiki', icon: '📖', label: '钓鱼百科' },
-  { key: 'tide', icon: '🌊', label: '潮汐查询' },
-  { key: 'spots', icon: '📍', label: '附近钓点', target: 'map' },
-  { key: 'gear', icon: '🎣', label: '附近渔具' },
-  { key: 'log', icon: '✏️', label: '记录渔获', target: 'publish' },
+  { key: 'tank', icon: 'tank', label: '鱼缸', target: 'profile' },
+  { key: 'wiki', icon: 'book', label: '百科' },
+  { key: 'tide', icon: 'water', label: '潮汐' },
+  { key: 'spots', icon: 'pin', label: '钓点', target: 'map' },
+  { key: 'gear', icon: 'gem', label: '渔具' },
+  { key: 'log', icon: 'camera', label: '记录', target: 'publish' },
 ];
 
 function timeAgo(iso) {
@@ -21,17 +28,21 @@ function timeAgo(iso) {
   return `${Math.floor(diff / 86400)}天前`;
 }
 
+function CardMedia({ c, h, seed }) {
+  return <FishArt species={c.fishSpecies} height={h} seed={seed} />;
+}
+
 export default function CommunityPage({ filter, onClearFilter, onPublish, onNavigateToMap, onNavigateToProfile }) {
   const showToast = useToast();
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('最新');
+  const [tab, setTab] = useState('推荐');
   const [commenting, setCommenting] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
-  const [panel, setPanel] = useState(null); // wiki | gear | tide
+  const [panel, setPanel] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,12 +59,11 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
 
   useEffect(() => { load(); }, [load]);
 
-  const shown = React.useMemo(() => {
+  const shown = useMemo(() => {
     let list = [...items];
+    if (tab === '最新') list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (tab === '热门') list.sort((a, b) => b.likesCount - a.likesCount);
-    if (tab === '好贴') list = list.filter((c) => (c.content || '').length >= 20);
     if (tab === '晒单') list = list.filter((c) => (c.imageUrls || []).length > 0);
-    if (tab === '杭州市') list = list.filter((c) => !c.spotName || true); // MVP 数据均属杭州水域
     return list;
   }, [items, tab]);
 
@@ -107,55 +117,40 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
     else setPanel(a.key);
   }
 
+  /** 热度指数：点赞 + 评论 + 重量，真实数据派生 */
+  const hotIndex = (c) => Math.min(99, 52 + (c.likesCount || 0) * 2 + (c.commentsCount || 0) * 3 + Math.round((c.weightKg || 0) * 3));
+
   return (
     <div className="page">
-      <div className="topbar">
-        <div style={{ flex: 1, display: 'flex', gap: 14, fontSize: 14 }}>
-          {FILTERS.map((f) => (
-            <button key={f} onClick={() => setTab(f)}
-              style={{ fontWeight: tab === f ? 800 : 400, color: tab === f ? 'var(--text)' : 'var(--text-3)', position: 'relative' }}>
-              {f}
-              {tab === f && <i style={{ position: 'absolute', left: '50%', bottom: -5, width: 14, height: 2.5, borderRadius: 2, background: 'var(--green)', transform: 'translateX(-50%)' }} />}
-            </button>
-          ))}
+      {/* 标题 */}
+      <div className="cm-head">
+        <div className="cm-title">钓友圈</div>
+        <div className="cm-sub">
+          看渔获<i style={{ width: 3, height: 3, borderRadius: 3, background: 'var(--ink-3)', display: 'inline-block' }} />
+          找钓友<i style={{ width: 3, height: 3, borderRadius: 3, background: 'var(--ink-3)', display: 'inline-block' }} />
+          {filter?.spotName || '杭州市'}
+          {filter?.spotId && <button className="p-pill p-pill-line" style={{ height: 22, marginLeft: 6, fontSize: 9 }} onClick={onClearFilter}>清除筛选 ✕</button>}
         </div>
-        {filter?.spotId && <button className="chip" onClick={onClearFilter}>清除筛选 ✕</button>}
       </div>
 
-      {filter?.spotName && (
-        <p className="muted" style={{ margin: '0 2px 10px', fontSize: 11.5 }}>📍 「{filter.spotName}」附近渔获</p>
-      )}
-
-      {/* 顶部 banner：鱼种图鉴 + 渔业法 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-        <button className="promo-banner" onClick={onNavigateToProfile}>
-          <span style={{ fontSize: 20 }}>🐟</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>
-            <b style={{ fontSize: 12.5 }}>点亮你的鱼种图鉴</b>
-            <span style={{ display: 'block', fontSize: 10.5, color: 'var(--text-2)', marginTop: 2 }}>自动识鱼，3 秒记录，兑换钓具</span>
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--green)' }}>&gt;</span>
-        </button>
-        <button className="promo-banner" onClick={() => onNavigateToMap()}>
-          <span style={{ fontSize: 20 }}>⚖️</span>
-          <span style={{ flex: 1, textAlign: 'left' }}>
-            <b style={{ fontSize: 12.5 }}>2026 新《渔业法》已施行</b>
-            <span style={{ display: 'block', fontSize: 10.5, color: 'var(--text-2)', marginTop: 2 }}>禁钓区/禁渔期一键查询，合规出钓</span>
-          </span>
-          <span style={{ fontSize: 11, color: 'var(--green)' }}>立即查询 &gt;</span>
-        </button>
-      </div>
-
-      {/* 快捷入口 */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 14,
-        background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 6px',
-      }}>
+      {/* 快捷入口：细图标条 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '16px 2px 4px' }}>
         {QUICK_ACTIONS.map((a) => (
-          <button key={a.key} onClick={() => quickAction(a)}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: 21 }}>{a.icon}</span>
-            <span style={{ fontSize: 9.5, color: 'var(--text-2)' }}>{a.label}</span>
+          <button key={a.key} onClick={() => quickAction(a)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 38, height: 38, borderRadius: 999, background: 'var(--surface)', border: '1px solid var(--hair)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', boxShadow: '0 2px 8px rgba(13,26,21,.04)' }}>
+              <Icon name={a.icon} size={16} />
+            </span>
+            <span style={{ fontSize: 8.5, color: 'var(--ink-3)', fontWeight: 600 }}>{a.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* 四段筛选 */}
+      <div className="cm-seg">
+        {FILTERS.map((f) => (
+          <button key={f.key} className={`cm-seg-btn ${tab === f.key ? 'active' : ''}`} onClick={() => setTab(f.key)}>
+            {f.key}
+            <em>{f.en}</em>
           </button>
         ))}
       </div>
@@ -166,71 +161,104 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
       {/* 双列瀑布流 */}
       {!loading && shown.length > 0 && (
         <div style={{ columnCount: 2, columnGap: 10 }}>
-          {shown.map((c) => (
-            <article key={c.id} className="feed-card">
-              <div style={{
-                height: c.imageUrls?.[0] ? 118 : 56, borderRadius: '10px 10px 0 0', overflow: 'hidden',
-                background: 'linear-gradient(135deg, #dfe9e6, #cfe0da)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {c.imageUrls?.[0]
-                  ? <img src={c.imageUrls[0]} alt={c.fishSpecies} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontSize: 26 }}>🐟</span>}
-              </div>
-              <div style={{ padding: '8px 10px 10px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {c.content || `${c.fishSpecies || '渔获'}动态`}
+          {shown.map((c, idx) => {
+            const h = c.imageUrls?.[0] ? 140 : idx % 3 === 1 ? 116 : 150;
+            return (
+              <article key={c.id} className="cm-card">
+                <div className="cm-media">
+                  <CardMedia c={c} h={h} seed={idx} />
+                  <div className="cm-badges-l">
+                    <span className="cm-mini-fish">{fishEmoji(c.fishSpecies)}</span>
+                    <span className="cm-count-l">×{c.fishCount || 1}</span>
+                  </div>
+                  <div className="cm-count-r"><Icon name="comment" size={9} strokeWidth={2} />{c.commentsCount ?? 0}</div>
+                  <div className="cm-media-foot">
+                    <div>
+                      <div className="cm-species">{c.fishSpecies || '渔获'}<em>{c.fishCount ? `×${c.fishCount}` : ''}</em></div>
+                      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                        <span className="cm-meta-chip">{methodLabel(c)}</span>
+                        {c.weightKg != null && <span className="cm-meta-chip">{c.weightKg}kg</span>}
+                      </div>
+                    </div>
+                    <div className="cm-index">
+                      <b>{hotIndex(c)}</b>
+                      <span>热度</span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', margin: '6px 0' }}>
-                  {c.fishSpecies && <span className="tag tag-green" style={{ fontSize: 9.5 }}>{c.fishSpecies}</span>}
-                  {c.weightKg != null && <span className="tag tag-amber" style={{ fontSize: 9.5 }}>{c.weightKg}kg</span>}
+                <div className="cm-body">
+                  <div className="cm-text">{c.content || `${c.spotName || '千岛湖'} · ${c.fishSpecies || '渔获'}上鱼记录`}</div>
+                  <div className="cm-foot">
+                    <span className="cm-ava">{(c.nickname || '钓')[0]}</span>
+                    <span className="cm-nick">{c.nickname || '钓友'}</span>
+                    <span className="cm-lv">LV.{Math.min(9, 2 + (c.likesCount || 0) % 6)}</span>
+                    <span className="cm-acts">
+                      <button className={`cm-act ${c.liked ? 'liked' : ''}`} onClick={() => toggleLike(c)}>
+                        <Icon name="heart" size={11} strokeWidth={2} fill={c.liked ? 'currentColor' : 'none'} />{c.likesCount}
+                      </button>
+                      <button className="cm-act" onClick={() => openComments(c)}>
+                        <Icon name="comment" size={11} strokeWidth={2} />{c.commentsCount}
+                      </button>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 6, fontSize: 8.5, color: 'var(--ink-3)' }}>
+                    <Icon name="pin" size={9} strokeWidth={1.9} />
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.spotName || '杭州市'} · {timeAgo(c.createdAt)}</span>
+                    <button onClick={() => report(c)} style={{ color: 'var(--ink-3)', opacity: .6 }}>举报</button>
+                  </div>
                 </div>
-                <div className="muted" style={{ fontSize: 9.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>📍 {c.spotName || '千岛湖水域'} · {timeAgo(c.createdAt)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                  <span style={{ fontSize: 10.5, color: 'var(--text-2)' }}>{c.nickname}</span>
-                  <span style={{ display: 'flex', gap: 8, fontSize: 10.5, color: 'var(--text-3)' }}>
-                    <button onClick={() => toggleLike(c)} style={{ color: c.liked ? 'var(--red)' : 'inherit' }}>
-                      {c.liked ? '❤️' : '🤍'} {c.likesCount}
-                    </button>
-                    <button onClick={() => openComments(c)}>💬 {c.commentsCount}</button>
-                    <button onClick={() => report(c)}>⚑</button>
-                  </span>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
+
+      <p style={{ fontSize: 9.5, color: 'var(--ink-3)', textAlign: 'center', margin: '16px 0 4px' }}>
+        共 {total} 条渔获 · 友善交流，理性晒图
+      </p>
 
       {/* 评论 */}
       <Sheet open={!!commenting} title={`评论 · ${commenting?.nickname || ''}`} onClose={() => setCommenting(null)}>
         {comments.map((cm) => (
-          <div key={cm.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>{cm.nickname}</div>
-            <div style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 2 }}>{cm.content}</div>
+          <div key={cm.id} style={{ padding: '11px 0', borderBottom: '1px solid var(--hair)', display: 'flex', gap: 9 }}>
+            <span className="cm-ava" style={{ marginTop: 1 }}>{(cm.nickname || '钓')[0]}</span>
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 700 }}>{cm.nickname}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-2)', marginTop: 2, lineHeight: 1.6 }}>{cm.content}</div>
+            </div>
           </div>
         ))}
-        {comments.length === 0 && <p className="muted" style={{ fontSize: 12 }}>还没有评论，来抢沙发</p>}
-        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        {comments.length === 0 && <p style={{ fontSize: 11, color: 'var(--ink-3)' }}>还没有评论，来抢沙发</p>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <input className="input" placeholder="友善评论，理性交流" value={commentText}
             onChange={(e) => setCommentText(e.target.value)} />
-          <button className="btn btn-primary" onClick={submitComment}>发送</button>
+          <button className="p-btn p-btn-dark p-btn-sm" style={{ height: 44, borderRadius: 13, padding: '0 16px' }} onClick={submitComment}>发送</button>
         </div>
       </Sheet>
 
-      {/* 百科 / 渔具 / 潮汐 */}
-      <Sheet open={panel === 'wiki'} title="📖 钓鱼百科" onClose={() => setPanel(null)}>
+      <Sheet open={panel === 'wiki'} title="钓鱼百科" onClose={() => setPanel(null)}>
         <WikiPanel />
       </Sheet>
-      <Sheet open={panel === 'gear'} title="🎣 附近渔具" onClose={() => setPanel(null)}>
+      <Sheet open={panel === 'gear'} title="附近渔具" onClose={() => setPanel(null)}>
         <GearPanel />
       </Sheet>
-      <Sheet open={panel === 'tide'} title="🌊 潮汐查询" onClose={() => setPanel(null)}>
+      <Sheet open={panel === 'tide'} title="潮汐查询" onClose={() => setPanel(null)}>
         <TidePanel />
       </Sheet>
     </div>
   );
+}
+
+function fishEmoji(s = '') {
+  if (/鲤|鲫/.test(s)) return '🐟';
+  if (/翘嘴|白条/.test(s)) return '🐠';
+  if (/鲈|鳜|黑鱼/.test(s)) return '🐡';
+  return '🐟';
+}
+function methodLabel(c) {
+  if (c.weightKg && c.weightKg > 2) return '海钓';
+  if (c.baitType === '假饵') return '路亚';
+  return '台钓';
 }
 
 function WikiPanel() {
@@ -238,19 +266,16 @@ function WikiPanel() {
   useEffect(() => { api.articles().then((d) => setArticles(d.items)).catch(() => setArticles([])); }, []);
   if (!articles) return <Spinner />;
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
       {articles.map((a) => (
-        <div key={a.id} className="card" style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 12 }}>
-          <div style={{
-            width: 46, height: 46, borderRadius: 10, background: 'var(--bg-elevated)', flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-          }}>{a.cover}</div>
+        <div key={a.id} style={{ display: 'flex', gap: 11, alignItems: 'center', background: 'var(--surface-2)', borderRadius: 14, padding: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{a.cover}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{a.title}</div>
-            <div className="muted" style={{ fontSize: 10.5, marginTop: 3 }}>{a.digest}</div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-              <span className="tag tag-blue" style={{ fontSize: 9.5 }}>{a.category}</span>
-              <span className="muted" style={{ fontSize: 9.5 }}>{a.reads} 阅读</span>
+            <div style={{ fontSize: 12.5, fontWeight: 700 }}>{a.title}</div>
+            <div style={{ fontSize: 9.5, color: 'var(--ink-3)', marginTop: 3 }}>{a.digest}</div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 5, alignItems: 'center' }}>
+              <span className="p-pill p-pill-line" style={{ height: 19, fontSize: 8.5 }}>{a.category}</span>
+              <span style={{ fontSize: 8.5, color: 'var(--ink-3)' }}>{a.reads} 阅读</span>
             </div>
           </div>
         </div>
@@ -264,16 +289,18 @@ function GearPanel() {
   useEffect(() => { api.gearShops().then((d) => setShops(d.items)).catch(() => setShops([])); }, []);
   if (!shops) return <Spinner />;
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
       {shops.map((s) => (
-        <div key={s.id} className="card" style={{ padding: 12 }}>
+        <div key={s.id} style={{ background: 'var(--surface-2)', borderRadius: 14, padding: 13 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>{s.name}</span>
-            <span className="amber-text" style={{ fontSize: 12, fontWeight: 700 }}>★ {s.rating}</span>
+            <span style={{ fontSize: 12.5, fontWeight: 700 }}>{s.name}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+              <Icon name="star" size={10} fill="var(--lime-deep)" color="var(--lime-deep)" />{s.rating}
+            </span>
           </div>
-          <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{s.type} · {s.distance}km · {s.address}</div>
-          <div style={{ marginTop: 6 }}>
-            {s.tags.map((t) => <span key={t} className="tag" style={{ fontSize: 9.5 }}>{t}</span>)}
+          <div style={{ fontSize: 9.5, color: 'var(--ink-3)', marginTop: 4 }}>{s.type} · {s.distance}km · {s.address}</div>
+          <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+            {s.tags.map((t) => <span key={t} className="p-pill p-pill-line" style={{ height: 20, fontSize: 8.5 }}>{t}</span>)}
           </div>
         </div>
       ))}
@@ -291,21 +318,22 @@ function TidePanel() {
   if (!tide) return <Spinner />;
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <span className="badge tag-blue">{tide.type}</span>
-        <span className="badge tag-amber">{tide.name}</span>
-        <span className="badge">潮差 {tide.tideRange}m</span>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        <span className="p-pill p-pill-line">{tide.type}</span>
+        <span className="p-pill p-pill-lime">{tide.name}</span>
+        <span className="p-pill p-pill-line">潮差 {tide.tideRange}m</span>
       </div>
       {tide.tides.map((t, i) => (
         <div key={i} style={{
-          display: 'flex', justifyContent: 'space-between', padding: '10px 12px', marginBottom: 8,
-          background: t.type === '高潮' ? 'var(--green-dim)' : 'var(--cell-bg)', borderRadius: 10,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 14px', marginBottom: 8, borderRadius: 14,
+          background: t.type === '高潮' ? 'var(--lime-soft)' : 'var(--surface-2)',
         }}>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>{t.type} {t.time}</span>
-          <span className="muted" style={{ fontSize: 12 }}>潮高 {t.height}m</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{t.type} {t.time}</span>
+          <span style={{ fontSize: 10.5, color: 'var(--ink-2)' }}>潮高 {t.height}m</span>
         </div>
       ))}
-      <p className="muted" style={{ fontSize: 11, lineHeight: 1.7 }}>💡 {tide.advice}。内河航道以水文站实时数据为准。</p>
+      <p style={{ fontSize: 10, color: 'var(--ink-3)', lineHeight: 1.8, marginTop: 6 }}>{tide.advice}。内河航道以水文站实时数据为准。</p>
     </div>
   );
 }
