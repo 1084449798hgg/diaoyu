@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useAuth, useToast } from '../store.jsx';
 import { ReliabilityBadge, Sheet, Spinner, Empty } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
+import { wgs84ToGcj02, wgs84ToBd09 } from '../utils/geo.js';
 
 /* 演示水域边界：杭州 · 千岛湖 */
 const BOUNDS = { lngMin: 118.95, lngMax: 119.25, latMin: 29.43, latMax: 29.67 };
@@ -40,6 +41,9 @@ export default function MapPage({ onNavigateToCommunity }) {
   const [compliance, setCompliance] = useState(false);
   const [layerOpen, setLayerOpen] = useState(false);
   const [hint, setHint] = useState(true);
+  const [userLoc, setUserLoc] = useState(USER);
+  const [locStatus, setLocStatus] = useState('idle');
+  const [navSpot, setNavSpot] = useState(null);
   const dragRef = useRef(null);
   const longPressRef = useRef(null);
   const suppressClickRef = useRef(false);
@@ -66,6 +70,27 @@ export default function MapPage({ onNavigateToCommunity }) {
       }
     })();
   }, [showToast]);
+
+  // 获取手机当前位置（GPS / WGS-84）：成功则刷新附近钓点距离，失败回退默认坐标
+  useEffect(() => {
+    if (!('geolocation' in navigator)) { setLocStatus('unsupported'); return; }
+    setLocStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const ll = { lng: pos.coords.longitude, lat: pos.coords.latitude };
+        setUserLoc(ll); setLocStatus('ok');
+        try {
+          const [sd, st] = await Promise.all([
+            api.spots({ lng: ll.lng, lat: ll.lat, radius: 40000 }),
+            api.spotStats().catch(() => null),
+          ]);
+          setSpots(sd.spots); setStats(st);
+        } catch (_) { /* 保留初始结果 */ }
+      },
+      (err) => { setLocStatus(err?.code === 1 ? 'denied' : 'error'); },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setHint(false), 4200);
@@ -130,10 +155,51 @@ export default function MapPage({ onNavigateToCommunity }) {
     );
   }, [filtered, scale]);
 
-  function navigate(spot) {
-    const url = `https://uri.amap.com/navigation?to=${spot.lng},${spot.lat},${encodeURIComponent(spot.name)}&mode=car&policy=1&src=mypage&coordinate=gaode&callnative=1`;
-    window.open(url, '_blank');
-    showToast('正在调起高德地图导航…');
+  // —— 导航：起点=当前定位，终点=钓点，按目标地图坐标系转换后唤起对应 App ——
+  const NAV_ITEMS = [
+    { key: 'amap', name: '高德地图', desc: '驾车导航 · 实时路况', color: '#1B9CFF' },
+    { key: 'baidu', name: '百度地图', desc: '驾车导航 · 智能路线', color: '#2932E1' },
+    { key: 'tencent', name: '腾讯地图', desc: '驾车导航 · 精准到达', color: '#12B7F5' },
+  ];
+  function conv(lng, lat, provider) {
+    return provider === 'baidu' ? wgs84ToBd09(lng, lat) : wgs84ToGcj02(lng, lat);
+  }
+  function buildNavUrl(spot, provider) {
+    const f = conv(userLoc.lng, userLoc.lat, provider);
+    const t = conv(Number(spot.lng), Number(spot.lat), provider);
+    const enc = encodeURIComponent;
+    if (provider === 'amap') {
+      return `https://uri.amap.com/navigation?from=${f.lng},${f.lat},${enc('我的位置')}&to=${t.lng},${t.lat},${enc(spot.name)}&mode=car&policy=1&src=fishing&coordinate=gaode&callnative=1`;
+    }
+    if (provider === 'baidu') {
+      // 百度：坐标格式 lat,lng；coord_type=bd09ll
+      return `https://api.map.baidu.com/direction?origin=${f.lat},${f.lng}&destination=${t.lat},${t.lng}&mode=driving&region=${enc(spot.city || '杭州')}&output=html&coord_type=bd09ll&src=fishing`;
+    }
+    // 腾讯：坐标格式 lat,lng（GCJ-02），需 referer
+    return `https://apis.map.qq.com/uri/v1/routeplan?type=drive&from=${enc('我的位置')}&fromcoord=${f.lat},${f.lng}&to=${enc(spot.name)}&tocoord=${t.lat},${t.lng}&referer=fishingapp`;
+  }
+  function goNav(provider) {
+    const spot = navSpot; if (!spot) return;
+    const item = NAV_ITEMS.find((x) => x.key === provider);
+    showToast(`正在调起${item?.name || '地图'}…`, 'success');
+    setNavSpot(null);
+    window.location.href = buildNavUrl(spot, provider);
+  }
+  function openNav(spot) { setNavSpot(spot); }
+  function locateMe() {
+    if (!('geolocation' in navigator)) { showToast('当前环境不支持定位', 'error'); return; }
+    setLocStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const ll = { lng: pos.coords.longitude, lat: pos.coords.latitude };
+        setUserLoc(ll); setLocStatus('ok');
+        api.spots({ lng: ll.lng, lat: ll.lat, radius: 40000 }).then((d) => setSpots(d.spots)).catch(() => {});
+        showToast('已定位到当前位置', 'success');
+      },
+      (err) => { setLocStatus(err?.code === 1 ? 'denied' : 'error'); showToast('定位失败，已使用默认位置', 'error'); },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+    setScale(1); setOffset({ x: 0, y: 0 });
   }
 
   async function reportSpot(spot) {
@@ -144,7 +210,7 @@ export default function MapPage({ onNavigateToCommunity }) {
     } catch (e) { showToast(e.message, 'error'); }
   }
 
-  const [ux, uy] = project(USER.lng, USER.lat);
+  const [ux, uy] = project(userLoc.lng, userLoc.lat);
 
   return (
     <div style={{ position: 'relative', flex: 1, overflow: 'hidden', background: satellite ? '#07160f' : '#0b1512' }}>
@@ -245,7 +311,7 @@ export default function MapPage({ onNavigateToCommunity }) {
           <i />
           <button onClick={() => setScale((s) => Math.max(1, s / 1.5))}>－</button>
         </div>
-        <button className="mp-ctrl" onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}>
+        <button className={`mp-ctrl ${locStatus === 'ok' ? 'on' : ''}`} onClick={locateMe}>
           <Icon name="locate" size={17} /><span>定位</span>
         </button>
       </div>
@@ -321,8 +387,8 @@ export default function MapPage({ onNavigateToCommunity }) {
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="p-btn p-btn-dark" style={{ flex: 1 }} onClick={() => navigate(selected)}>
-                <Icon name="locate" size={14} /> 一键导航
+              <button className="p-btn p-btn-dark" style={{ flex: 1 }} onClick={() => openNav(selected)}>
+                <Icon name="locate" size={14} /> 导航前往
               </button>
               {!selected.banned && (
                 <button className="p-btn p-btn-ghost" style={{ flex: 1 }}
@@ -353,6 +419,35 @@ export default function MapPage({ onNavigateToCommunity }) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </Sheet>
+
+      {/* 导航选择：高德 / 百度 / 腾讯 */}
+      <Sheet open={!!navSpot} onClose={() => setNavSpot(null)}>
+        {navSpot && (
+          <div>
+            <h2 style={{ margin: '0 0 2px', fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 900, letterSpacing: '.04em' }}>导航前往</h2>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 14 }}>
+              {navSpot.name} · {navSpot.distance != null ? (navSpot.distance / 1000).toFixed(1) + 'km' : '附近'}
+              {locStatus === 'ok' ? ' · 已用当前定位' : ' · 默认起点'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {NAV_ITEMS.map((it) => (
+                <button key={it.key} onClick={() => goNav(it.key)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 13, width: '100%', padding: '14px 15px', borderRadius: 16, background: 'var(--surface-2)', border: '1px solid var(--hair)', textAlign: 'left' }}>
+                  <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 800, boxShadow: `0 6px 16px ${it.color}55` }}>{it.name[0]}</span>
+                  <span style={{ flex: 1 }}>
+                    <b style={{ fontSize: 13.5, fontWeight: 800, display: 'block' }}>{it.name}</b>
+                    <span style={{ fontSize: 10.5, color: 'var(--ink-3)' }}>{it.desc}</span>
+                  </span>
+                  <Icon name="right" size={16} strokeWidth={2} style={{ color: 'var(--ink-3)' }} />
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 14, fontSize: 10, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.6 }}>
+              将以您的当前定位为起点，唤起对应地图 App 导航<br />（未授权定位时将使用默认起点）
+            </div>
           </div>
         )}
       </Sheet>
