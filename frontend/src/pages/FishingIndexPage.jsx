@@ -132,7 +132,7 @@ function upcomingWindow(hourly, nowH) {
   return segs.find((s) => s.endH > nowH) || segs[0] || null;
 }
 
-export default function FishingIndexPage({ onNavigateToMap }) {
+export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
   const showToast = useToast();
   const { user } = useAuth();
   const [speciesList, setSpeciesList] = useState([]);
@@ -218,6 +218,16 @@ export default function FishingIndexPage({ onNavigateToMap }) {
           </div>
         </div>
       </div>
+
+      {/* 鱼情推理 · 可解释推理链入口 */}
+      <button className="rs-entry-line" onClick={() => onOpenReasoning && onOpenReasoning()}>
+        <span className="rs-el-ico"><Icon name="target" size={18} strokeWidth={1.8} /></span>
+        <div>
+          <b>查看鱼情推理报告</b>
+          <em>METEOROLOGY → GEOGRAPHY → WATER → VERDICT</em>
+        </div>
+        <Icon name="right" size={15} />
+      </button>
 
       {/* 橙色提示：最佳窗口 */}
       <button className="wx-alert" style={{ width: '100%', textAlign: 'left' }} onClick={() => showToast(`黄金时段 ${forecast?.bestWindow ? `${hh(forecast.bestWindow.start)}:00-${hh(forecast.bestWindow.end)}:00` : '-'}，建议提前打窝`, 'info')}>

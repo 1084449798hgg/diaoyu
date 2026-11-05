@@ -60,6 +60,7 @@ export const api = {
   spotStats: () => request('/spots/stats'),
   // forecast
   forecast: (params) => request(`/forecast${qs(params)}`),
+  forecastReasoning: (params) => request(`/forecast/reasoning${qs(params)}`),
   // users（个人中心/图鉴/鱼缸/VIP）
   me: () => request('/users/me'),
   encyclopedia: () => request('/users/me/encyclopedia'),

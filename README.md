@@ -283,3 +283,32 @@ fishing-app/
 流式 `compression` 产生 chunked 响应（无 `Content-Length`），部分公网穿透网关对静态资源及较大 API 响应返回 **502**。改为：静态资源按需生成 `.gz` 并以固定 `Content-Length` 发送（首次请求或重新构建后自动重建，无需改构建流程）；流式压缩默认关闭（`ENABLE_STREAM_COMPRESSION=1` 可在有正常反向代理时开启）；API 由 `res.json` 自带 `Content-Length` 直接返回。
 
 **验证**：本地 + 公网端到端全通过 —— 五页零 emoji、填充选中态、44px 命中区、对比度令牌、天气图标（主卡 1 + 逐小时 24）、10 个地图 marker、导航三选项与单层 Sheet、reduced-motion 降级、**0 请求失败 / 0 JS 错误**。
+
+---
+
+### 8.9 v5 鱼情推理引擎（开源算法引入 · 气象 → 地理 → 水域 → 鱼情）
+
+新增**全屏「鱼情推理」页**（首页横幅 / 天气页入口进入），把此前仅给分数的黑盒，升级为**三层可解释推理链**，真实数据驱动、非概念图。
+
+**引入的开源算法（保留出处与许可证）**
+
+| 项目 | 许可证 | 移植内容 |
+|---|---|---|
+| [q3579338/fishing-weather-forecast-china](https://github.com/q3579338/fishing-weather-forecast-china) `docs/model.md` 鱼情模型 v0.3 | MIT | 八因子加权（水温25/气压20/温变15/风10/天空10/时段10/月相5/**水域地理5**）、5 日水温惯性、水温闸门、3h 居中滑动平均、日分 `0.6·最佳6h + 0.4·全天`、危险封顶、**48h 降雨→河流涨水浑浊**、**风向→下风岸钓位**、季节水温带→水层/饵型建议 |
+| [Chris-db/FishCast](https://github.com/Chris-db/FishCast) `js/engine.js` | MIT | 天气闸门（weather gate）合成乘数、气压趋势评分、Solunar 大/小口窗口 |
+| [mourner/suncalc](https://github.com/mourner/suncalc) ★3511 | BSD-2-Clause | 按经纬度本地计算日出日落 / 月相 / 月中天 / 月出月落天文事件（`astro.js` 移植，无需外部 API） |
+
+**三层推理链**（`backend/src/modules/forecast/reasoning.js`）
+
+1. **气象层**：水温、气压（含 3h/24h 趋势）、温变、风、天空、时段（晨昏窗 + Solunar 加分）、月相 —— 七项逐项打分并各产出一句中文因果理由
+2. **地理环境 / 水域层**：经纬度→日出日落/月相/Solunar；水域类型（水库/湖泊/河流/黑坑/近海）、水深结构、48h 汇水涨水、季节水温带 —— 决定「在哪、何时、钓多深」
+3. **合成结论层**：加权和 → 水温闸门 → 天气闸门 → 水域修正 → 3h 平滑 → 日分 → 黄金窗口/等级/安全封顶
+
+**新增文件与接口**
+
+- `backend/src/modules/forecast/astro.js` —— suncalc 天文算法（CommonJS 移植）
+- `backend/src/modules/forecast/reasoning.js` —— 开源混合推理引擎 `hybrid-v2`
+- `GET /api/v1/forecast/reasoning?spotId=&date=&species=` —— 独立缓存键，不写入 `forecast_snapshots`、不污染既有单日预报契约；返回三层 `layers`（7+8+6 步）、`factors`、`hourly`、`advice`、`attribution`、`disclaimer`
+- `frontend/src/pages/ReasoningPage.jsx` + `premium.css` `.rs-*` —— 编辑式静奢页面：墨绿 Hero 巨号评分、黄金窗口卡、逐小时曲线、因子权重条、推理链时间线、出钓建议、来源/许可证 Sheet
+
+**验证**：本地端到端全通过 —— 首页/天气页入口、Hero 86 分、3 黄金窗口、曲线、7 因子条、14 步推理链（理由全部非空）、4 建议行、3 条来源带许可证、**切换鱼种 86→54 分真实重算**、五 Tab 回归、**0 请求失败 / 0 JS 错误**。顺带修复 `theme.css` 的 `breakInside` 驼峰属性。

@@ -76,7 +76,7 @@ function lightPalette(species = '') {
   return { a: '#f1f0ea', b: '#dfddd2', ink: '#8c8778' };
 }
 
-export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish }) {
+export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning }) {
   const showToast = useToast();
   const [spots, setSpots] = useState([]);
   const [speciesList, setSpeciesList] = useState([]);
@@ -263,6 +263,17 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
             <QuickBtn icon="tank" label="赛博鱼缸" onClick={onNavigateToProfile} />
             <QuickBtn icon="filter" label="全部" onClick={onNavigateToCommunity} />
           </div>
+
+          {/* 鱼情推理 · 开源混合引擎入口 */}
+          <button className="rs-entry" onClick={() => onOpenReasoning && onOpenReasoning()}>
+            <span className="rs-entry-ico"><Icon name="target" size={20} strokeWidth={1.8} /></span>
+            <span className="rs-entry-txt">
+              <span className="rs-entry-en">HYBRID REASONER · 鱼情推理</span>
+              <span className="rs-entry-cn">今日鱼情，如何推断</span>
+              <span className="rs-entry-sub">气象 → 地理 → 水域 · 三层可解释推理链</span>
+            </span>
+            <Icon name="right" size={18} className="rs-entry-arrow" />
+          </button>
 
           {/* 最新渔获 */}
           <div className="p-sec-head" style={{ marginTop: 20 }}>

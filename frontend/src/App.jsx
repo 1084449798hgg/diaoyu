@@ -6,6 +6,7 @@ import CommunityPage from './pages/CommunityPage.jsx';
 import MapPage from './pages/MapPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import PublishPage from './pages/PublishPage.jsx';
+import ReasoningPage from './pages/ReasoningPage.jsx';
 import Icon from './components/icons.jsx';
 
 /** 5 Tab 结构：首页 / 天气 / 钓友圈 / 地图 / 我的 */
@@ -20,6 +21,7 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState('home');
   const [publishing, setPublishing] = useState(false);
+  const [reasoning, setReasoning] = useState(false);
   const [communityFilter, setCommunityFilter] = useState(null);
   const { user } = useAuth();
 
@@ -45,6 +47,14 @@ export default function App() {
     );
   }
 
+  if (reasoning) {
+    return (
+      <div className="phone-frame">
+        <ReasoningPage onClose={() => setReasoning(false)} />
+      </div>
+    );
+  }
+
   const goMap = (spot) => {
     setCommunityFilter(null);
     setTab('map');
@@ -59,9 +69,10 @@ export default function App() {
           onNavigateToCommunity={() => { setCommunityFilter(null); setTab('community'); }}
           onNavigateToProfile={() => setTab('profile')}
           onPublish={() => setPublishing(true)}
+          onOpenReasoning={() => setReasoning(true)}
         />
       )}
-      {tab === 'weather' && <FishingIndexPage onNavigateToMap={() => goMap()} />}
+      {tab === 'weather' && <FishingIndexPage onNavigateToMap={() => goMap()} onOpenReasoning={() => setReasoning(true)} />}
       {tab === 'community' && (
         <CommunityPage
           filter={communityFilter}

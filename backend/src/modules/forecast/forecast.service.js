@@ -6,6 +6,7 @@ const pool = require('../../db/pool');
 const { cacheGet, cacheSet, secondsUntilEndOfDay } = require('../../cache/redis');
 const weatherService = require('../weather/weather.service');
 const { computeForecast, computeTopFactors, computeAdvice, computeDailyTrend, nextRainInfo } = require('./engine');
+const reasoningEngine = require('./reasoning');
 const { notFound, badRequest } = require('../../middleware/errors');
 
 const DISCLAIMER = '预测仅供参考，不构成出钓决策保证';
@@ -121,4 +122,22 @@ async function getForecast({ spotId, dateStr, speciesName, days = 1 }) {
   return result;
 }
 
-module.exports = { getForecast };
+/**
+ * 鱼情推理（v2 开源混合引擎）：气象 → 地理环境/水域 → 鱼情结论，可解释推理链。
+ * 独立缓存键，不写入 forecast_snapshots，避免污染既有单日预报契约。
+ */
+async function getReasoning({ spotId, dateStr, speciesName }) {
+  if (!DATE_RE.test(dateStr)) throw badRequest('date 需为 YYYY-MM-DD 格式');
+  const cacheKey = `reasoning:${spotId}:${dateStr}:${speciesName}`;
+  const cached = await cacheGet(cacheKey);
+  if (cached) return { ...cached, meta: { source: 'cache' } };
+
+  const spot = await getSpot(spotId);
+  const species = await getSpeciesConfig(speciesName);
+  const weather = await weatherService.getWeather(spot, dateStr);
+  const result = reasoningEngine.reason(spot, species, weather, dateStr);
+  await cacheSet(cacheKey, result, secondsUntilEndOfDay(dateStr));
+  return result;
+}
+
+module.exports = { getForecast, getReasoning };

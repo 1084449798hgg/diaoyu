@@ -22,4 +22,19 @@ router.get('/', ah(async (req, res) => {
   res.json(result);
 }));
 
+/**
+ * GET /api/v1/forecast/reasoning?spotId=&date=&species=
+ * 鱼情推理链（v2 开源混合引擎）：三层可解释推理 + 因子明细 + 建议 + 算法来源署名
+ */
+router.get('/reasoning', ah(async (req, res) => {
+  const { spotId, date, species } = req.query;
+  if (!spotId || !date || !species) throw badRequest('缺少必填参数 spotId / date / species');
+  const result = await forecastService.getReasoning({
+    spotId: Number(spotId),
+    dateStr: String(date),
+    speciesName: String(species),
+  });
+  res.json(result);
+}));
+
 module.exports = router;
