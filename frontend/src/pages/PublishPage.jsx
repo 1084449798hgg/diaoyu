@@ -102,7 +102,10 @@ export default function PublishPage({ onClose, onPublished }) {
     <div className="page">
       <div className="topbar">
         <button className="muted" style={{ fontSize: 13 }} onClick={step === 1 ? onClose : () => setStep(step - 1)}>
-          {step === 1 ? '✕ 取消' : '‹ 上一步'}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <Icon name={step === 1 ? 'x' : 'left'} size={14} strokeWidth={2} />
+            {step === 1 ? '取消' : '上一步'}
+          </span>
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div className="topbar-title" style={{ fontSize: 16 }}>发布渔获</div>
@@ -131,7 +134,7 @@ export default function PublishPage({ onClose, onPublished }) {
           <button
             onClick={() => fileRef.current?.click()}
             style={{
-              width: '100%', aspectRatio: '4 / 3', borderRadius: 18, border: '1.5px dashed #d5dccd',
+              width: '100%', aspectRatio: '4 / 3', borderRadius: 18, border: '1.5px dashed var(--hair-2)',
               background: 'var(--surface-2)', display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--ink-3)',
             }}
@@ -160,10 +163,10 @@ export default function PublishPage({ onClose, onPublished }) {
 
           {recognized && !recognized.failed && (
             <div style={{
-              marginTop: 14, background: 'var(--lime-soft)', border: '1px solid #dcecab',
+              marginTop: 14, background: 'var(--lime-soft)', border: '1px solid var(--line-lime)',
               borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <span style={{ fontSize: 18 }}>🎯</span>
+              <Icon name="target" size={19} strokeWidth={1.7} color="#4d6318" />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: '#4d6318' }}>识别结果：{recognized.species}</div>
                 <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>下一步可修改</div>
@@ -174,10 +177,13 @@ export default function PublishPage({ onClose, onPublished }) {
 
           {recognized?.failed && (
             <div style={{
-              marginTop: 14, background: 'var(--orange-soft)', border: '1px solid #ffe0c7',
+              marginTop: 14, background: 'var(--orange-soft)', border: '1px solid var(--line-orange)',
               borderRadius: 12, padding: '10px 14px', fontSize: 11.5, color: '#a34a00',
             }}>
-              ⚠️ 识别失败，不影响发布 —— 下一步手动选择鱼种即可
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="alertTriangle" size={14} strokeWidth={1.8} />
+                识别失败，不影响发布 —— 下一步手动选择鱼种即可
+              </span>
             </div>
           )}
 
@@ -253,7 +259,7 @@ export default function PublishPage({ onClose, onPublished }) {
           </div>
 
           <button className="btn btn-primary btn-block" disabled={submitting} onClick={submit}>
-            {submitting ? '发布中…' : '🚀 发布渔获'}
+            {submitting ? '发布中…' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><Icon name="send" size={15} strokeWidth={2} />发布渔获</span>}
           </button>
         </div>
       )}

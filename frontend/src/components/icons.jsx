@@ -1,13 +1,26 @@
 import React from 'react';
 
-/** 精细线性图标集：统一 24 视框 / 1.7 线宽 / 圆头圆角 */
+/**
+ * 精细线性图标集 · v4.1
+ * ------------------------------------------------------------------
+ * 规范（metago-ui-illustrator × Apple HIG）
+ *  · 24 × 24 视框，1.7 线宽，圆头圆角（strokeLinecap / Linejoin = round）
+ *  · 2.5–21.5 光学安全区：所有主形收在同一视觉重量内，小尺寸不糊、不贴边
+ *  · 线性 + 几何 / 低饱和 / 单一强调色；实心点缀仅用于「眼、点、指针」等语义焦点
+ *  · filled 变体用于选中态（描边 → 填充），未收录的图标自动加重线宽反馈
+ *  · 颜色一律继承 currentColor，不内置任何色值
+ * ------------------------------------------------------------------
+ */
+
+/* ---------------- 线性主体 ---------------- */
 const P = {
-  fish: <><path d="M3 12c4.2-5.2 9.3-6.6 14-4.2 1.4.7 2.6 1.7 3.6 2.9-1 1.2-2.2 2.2-3.6 2.9-4.7 2.4-9.8 1-14-4.2z" /><path d="M3 12l-1.4 3.1M3 12l-1.4-3.1" /><circle cx="15.6" cy="10.6" r=".9" fill="currentColor" stroke="none" /></>,
-  home: <><path d="M3.8 10.6 12 3.8l8.2 6.8V20a1 1 0 0 1-1 1h-4.6v-6H9.4v6H4.8a1 1 0 0 1-1-1z" /></>,
-  cloud: <><path d="M7 18.5a3.9 3.9 0 0 1-.4-7.8 5.2 5.2 0 0 1 10-1.1 3.9 3.9 0 0 1 .6 7.6" /><path d="M7 18.5h9.5" /></>,
+  /* — 品牌 / 钓法 — */
+  fish: <><path d="M3.2 12c4-5 8.9-6.4 13.4-4 1.5.7 2.8 1.8 3.9 3.1-1.1 1.3-2.4 2.4-3.9 3.1-4.5 2.4-9.4 1-13.4-4z" /><path d="M3.2 12 2 14.9M3.2 12 2 9.1" /><path d="M8.7 10.2c.7 1.2.7 2.4 0 3.6" /><circle cx="16" cy="10.7" r=".8" fill="currentColor" stroke="none" /></>,
+  home: <><path d="M3.6 10.4 12 3.4l8.4 7V19.6a1.4 1.4 0 0 1-1.4 1.4h-4.7v-6.2H9.7V21H5a1.4 1.4 0 0 1-1.4-1.4z" /></>,
+  cloud: <><path d="M6.9 18.6a3.9 3.9 0 0 1-.4-7.8 5.2 5.2 0 0 1 10-1.1 3.9 3.9 0 0 1 .6 7.6" /><path d="M6.9 18.6h9.5" /></>,
   message: <><path d="M20.2 11.6c0 3.9-3.7 7-8.2 7-1 0-2-.2-2.9-.5l-4 1.3 1.2-3.4a6.6 6.6 0 0 1-2.5-5.2c0-3.9 3.7-7 8.2-7s8.2 3.1 8.2 7.8z" /></>,
-  pin: <><path d="M19 10.4c0 5.2-7 11-7 11s-7-5.8-7-11a7 7 0 0 1 14 0z" /><circle cx="12" cy="10.2" r="2.6" /></>,
-  user: <><circle cx="12" cy="8.2" r="3.9" /><path d="M4.6 20.4c.6-3.7 3.7-6.1 7.4-6.1s6.8 2.4 7.4 6.1" /></>,
+  pin: <><path d="M19 10.4c0 5.2-7 11-7 11s-7-5.8-7-11a7 7 0 0 1 14 0z" /><circle cx="12" cy="10.2" r="2.5" /></>,
+  user: <><circle cx="12" cy="8.1" r="3.8" /><path d="M4.7 20.4c.6-3.7 3.7-6.1 7.3-6.1s6.7 2.4 7.3 6.1" /></>,
   bell: <><path d="M18.2 8.6a6.2 6.2 0 1 0-12.4 0c0 6.6-2.4 8.2-2.4 8.2h17.2s-2.4-1.6-2.4-8.2z" /><path d="M13.7 20.6a2.1 2.1 0 0 1-3.4 0" /></>,
   gear: <><circle cx="12" cy="12" r="3.1" /><path d="M19.4 14.4a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.3a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1z" /></>,
   heart: <><path d="M20.2 6.8a4.6 4.6 0 0 0-6.6 0L12 8.4l-1.6-1.6a4.6 4.6 0 1 0-6.6 6.6l1.6 1.6L12 21l6.6-6.4 1.6-1.6a4.6 4.6 0 0 0 0-6.2z" /></>,
@@ -16,7 +29,7 @@ const P = {
   left: <><path d="M14.5 5.5 8 12l6.5 6.5" /></>,
   search: <><circle cx="10.8" cy="10.8" r="6.4" /><path d="M15.6 15.6 20 20" /></>,
   star: <><path d="m12 3.6 2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8z" /></>,
-  locate: <><circle cx="12" cy="12" r="3.2" /><path d="M12 2.4v2.6M12 19v2.6M2.4 12H5M19 12h2.6" /><circle cx="12" cy="12" r="7.4" /></>,
+  locate: <><circle cx="12" cy="12" r="3.1" /><path d="M12 2.4v2.6M12 19v2.6M2.4 12H5M19 12h2.6" /><circle cx="12" cy="12" r="7.4" /></>,
   plus: <><path d="M12 5.2v13.6M5.2 12h13.6" /></>,
   minus: <><path d="M5.2 12h13.6" /></>,
   camera: <><path d="M3.6 8.6h3l1.3-2.1h8.2l1.3 2.1h3v10.2a1.2 1.2 0 0 1-1.2 1.2H4.8a1.2 1.2 0 0 1-1.2-1.2z" /><circle cx="12" cy="13.6" r="3.4" /></>,
@@ -33,7 +46,7 @@ const P = {
   flame: <><path d="M12 21c3.8 0 6.4-2.6 6.4-6.2 0-4.6-4.2-6.2-4.2-9.6 0 0-3.2 1.4-3.2 5 0 1.4-.8 2-1.6 2-.9 0-1.6-.7-1.8-1.8-1.2 1.6-2 3-2 4.4C5.6 18.4 8.2 21 12 21z" /></>,
   drop: <><path d="M12 3.4c3.2 3.8 5.6 6.6 5.6 9.8a5.6 5.6 0 1 1-11.2 0c0-3.2 2.4-6 5.6-9.8z" /></>,
   wind: <><path d="M3.4 8.2h9.8a2.6 2.6 0 1 0-2.6-2.6M3.4 12h13a2.4 2.4 0 1 1-2.4 2.4M3.4 15.8h6.4" /></>,
-  gauge: <><path d="M4 16.4a8.2 8.2 0 1 1 16 0" /><path d="m12 16.4 3.4-5.2" /><circle cx="12" cy="16.4" r="1.3" fill="currentColor" stroke="none" /></>,
+  gauge: <><path d="M4 16.4a8.2 8.2 0 1 1 16 0" /><path d="m12 16.4 3.4-5.2" /><circle cx="12" cy="16.4" r="1.2" fill="currentColor" stroke="none" /></>,
   thermo: <><path d="M14.4 13.6V5.4a2.4 2.4 0 1 0-4.8 0v8.2a4.4 4.4 0 1 0 4.8 0z" /></>,
   water: <><path d="M3.6 8.4c1.8-1.2 3.6-1.2 5.4 0s3.6 1.2 5.4 0 3.6-1.2 5.4 0M3.6 13.2c1.8-1.2 3.6-1.2 5.4 0s3.6 1.2 5.4 0 3.6-1.2 5.4 0M3.6 18c1.8-1.2 3.6-1.2 5.4 0s3.6 1.2 5.4 0 3.6-1.2 5.4 0" /></>,
   filter: <><path d="M4 6.4h16M7 12h10M10 17.6h4" /></>,
@@ -45,16 +58,90 @@ const P = {
   info: <><circle cx="12" cy="12" r="8.4" /><path d="M12 11v5.4M12 7.8v.4" /></>,
   arrowUp: <><path d="M12 19V5M6 11l6-6 6 6" /></>,
   arrowDown: <><path d="M12 5v14M6 13l6 6 6-6" /></>,
+
+  /* — v4.1 新增：天气（替代 emoji 天空图标） — */
+  sun: <><circle cx="12" cy="12" r="3.7" /><path d="M12 2.6v2.1M12 19.3v2.1M2.6 12h2.1M19.3 12h2.1M5.4 5.4l1.5 1.5M17.1 17.1l1.5 1.5M18.6 5.4l-1.5 1.5M6.9 17.1l-1.5 1.5" /></>,
+  cloudSun: <><circle cx="8.2" cy="7.6" r="2.9" /><path d="M8.2 2.6v1.4M3.2 7.6h1.4M4.6 4l1 1M11.8 4l-1 1" /><path d="M9.4 19.4h8.7a3.4 3.4 0 0 0 .3-6.8 4.9 4.9 0 0 0-9.2-1 3.5 3.5 0 0 0 .2 7.8z" /></>,
+  cloudRain: <><path d="M7 15.2a3.7 3.7 0 0 1-.4-7.4 5 5 0 0 1 9.6-1 3.7 3.7 0 0 1 .6 7.3" /><path d="m8.4 18-1 2.8M12.4 18l-1 2.8M16.4 18l-1 2.8" /></>,
+  cloudDrizzle: <><path d="M7 14.8a3.7 3.7 0 0 1-.4-7.4 5 5 0 0 1 9.6-1 3.7 3.7 0 0 1 .6 7.3" /><path d="M8.6 18v1.4M12 18.6v1.6M15.4 18v1.4" /></>,
+  cloudSnow: <><path d="M7 14.6a3.7 3.7 0 0 1-.4-7.4 5 5 0 0 1 9.6-1 3.7 3.7 0 0 1 .6 7.3" /><path d="M8.4 18.4h.1M12 19.6h.1M15.6 18.4h.1M10.2 21h.1M13.8 21h.1" /></>,
+  cloudLightning: <><path d="M7 14.4a3.7 3.7 0 0 1-.4-7.4 5 5 0 0 1 9.6-1 3.7 3.7 0 0 1 .6 7.3" /><path d="m12.8 16.2-2.4 3.4h2.6l-1.2 3 3.4-4h-2.4z" /></>,
+  cloudFog: <><path d="M7 14.4a3.7 3.7 0 0 1-.4-7.4 5 5 0 0 1 9.6-1 3.7 3.7 0 0 1 .6 7.3" /><path d="M5.6 18.2h12.8M7.4 20.8h9.2" /></>,
+  moon: <><path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8z" /></>,
+  sunrise: <><path d="M3 19.4h18M6.4 15.6a5.6 5.6 0 0 1 11.2 0" /><path d="M12 3.4v3.2M5.6 6.6l2 2M18.4 6.6l-2 2M2.8 12h2.4M18.8 12h2.4" /></>,
+  sunset: <><path d="M3 19.4h18M6.4 15.6a5.6 5.6 0 0 1 11.2 0" /><path d="M12 3.4v3.2M5.6 6.6l2 2M18.4 6.6l-2 2M2.8 12h2.4M18.8 12h2.4M12 21.2v-2" /></>,
+  tide: <><path d="M3.4 9.4c1.8-1.4 3.6-1.4 5.4 0s3.6 1.4 5.4 0 3.6-1.4 5.4 0M3.4 14c1.8-1.4 3.6-1.4 5.4 0s3.6 1.4 5.4 0 3.6-1.4 5.4 0" /><path d="M3.4 18.6h17.2" /></>,
+  wave: <><path d="M2.8 8.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6.4 0M2.8 13c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6.4 0M2.8 17.4c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6.4 0" /></>,
+
+  /* — v4.1 新增：操作 / 状态（替代 emoji 按钮与提示） — */
+  x: <><path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8" /></>,
+  chevronUp: <><path d="m6 14.5 6-6 6 6" /></>,
+  chevronDown: <><path d="m6 9.5 6 6 6-6" /></>,
+  checkCircle: <><circle cx="12" cy="12" r="8.4" /><path d="m8.2 12.2 2.6 2.6 5-5.2" /></>,
+  alertTriangle: <><path d="M12 3.6 2.8 19.4a1.2 1.2 0 0 0 1 1.8h16.4a1.2 1.2 0 0 0 1-1.8z" /><path d="M12 9.4v4.6M12 17.4v.2" /></>,
+  helpCircle: <><circle cx="12" cy="12" r="8.4" /><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.7v.4M12 17.2v.2" /></>,
+  plusCircle: <><circle cx="12" cy="12" r="8.4" /><path d="M12 8.2v7.6M8.2 12h7.6" /></>,
+  rocket: <><path d="M13.6 4.4c3.4-1.4 6-1 6-1s.4 2.6-1 6c-1.2 2.9-4 5.4-6.6 6.6l-3.6-3.6c1.2-2.6 3.7-5.4 6.6-6.6z" /><path d="m8.4 12.4-3-.6-2 3.4 3 1M11.6 15.6l.6 3-3.4 2-1-3" /><circle cx="15.4" cy="8.6" r="1.3" /><path d="M6 18.6c-1 1-1.2 2.6-1.2 2.6s1.6-.2 2.6-1.2" /></>,
+  target: <><circle cx="12" cy="12" r="8.4" /><circle cx="12" cy="12" r="4.8" /><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" /></>,
+  leaf: <><path d="M20 4.2C11 3.6 4.6 7 4.6 13.6a5.6 5.6 0 0 0 5.8 5.8C17 19.4 20.6 13 20 4.2z" /><path d="M4.4 20c2.4-4.4 5.8-7.6 10.6-10" /></>,
+  compass: <><circle cx="12" cy="12" r="8.4" /><path d="m14.8 9.2-1.6 4-4 1.6 1.6-4z" /></>,
+  navigation: <><path d="M20.4 3.6 3.8 10.4l7 2.8 2.8 7z" /><path d="m10.8 13.2 3-3" /></>,
+  route: <><circle cx="5.6" cy="6" r="2" /><circle cx="18.4" cy="18" r="2" /><path d="M7.6 6h5.6a3.6 3.6 0 0 1 0 7.2h-2.4a3.6 3.6 0 0 0 0 7.2h5.6" /></>,
+  map: <><path d="m3.4 6.2 5.6-2.4 6 2.4 5.6-2.4v14l-5.6 2.4-6-2.4-5.6 2.4z" /><path d="M9 3.8v14M15 6.2v14" /></>,
+  image: <><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="2.4" /><circle cx="8.6" cy="9.4" r="1.5" /><path d="m3.8 17 4.8-4.4 3.4 3 3-2.6 5.4 4.6" /></>,
+  trash: <><path d="M4.6 7h14.8M9.2 7V4.8h5.6V7M6.6 7l.9 12.2a1.4 1.4 0 0 0 1.4 1.2h6.2a1.4 1.4 0 0 0 1.4-1.2L17.4 7" /><path d="M10.4 10.6v6M13.6 10.6v6" /></>,
+  edit: <><path d="M4.4 19.6h3.2l10-10a2.2 2.2 0 0 0-3.2-3.2l-10 10z" /><path d="m13.4 7.4 3.2 3.2" /></>,
+  send: <><path d="M20.8 3.4 3.6 10l6.6 2.8 2.8 6.6z" /><path d="M10.2 12.8 20.8 3.4" /></>,
+  trophy: <><path d="M7 4.4h10v5.2a5 5 0 0 1-10 0z" /><path d="M7 6H4.4v1.6a3.4 3.4 0 0 0 3 3.4M17 6h2.6v1.6a3.4 3.4 0 0 1-3 3.4M12 14.6v3.4M8.4 20.6h7.2M9.8 18h4.4" /></>,
+  crown: <><path d="M3.4 7.4l3.8 3.2L12 4.6l4.8 6 3.8-3.2-1.6 11H5z" /><path d="M5.6 20.4h12.8" /></>,
+  flag: <><path d="M5.4 21V3.6M5.4 4.6h12.8l-2.6 4.2 2.6 4.2H5.4" /></>,
+  bookmark: <><path d="M6.4 3.8h11.2v16.4L12 16.4l-5.6 3.8z" /></>,
+  chart: <><path d="M3.6 20.4h16.8M6 17V11M10.4 17V6.6M14.8 17v-7M19.2 17V8.4" /></>,
+  eye: <><path d="M2.8 12S6.4 5.8 12 5.8 21.2 12 21.2 12 17.6 18.2 12 18.2 2.8 12 2.8 12z" /><circle cx="12" cy="12" r="2.8" /></>,
+  lock: <><rect x="4.8" y="10.4" width="14.4" height="10" rx="2.2" /><path d="M8 10.4V7.6a4 4 0 0 1 8 0v2.8M12 14.6v2.2" /></>,
+  refresh: <><path d="M20 11.4a8.2 8.2 0 0 0-14.2-4.6L3.4 9.2M4 12.6a8.2 8.2 0 0 0 14.2 4.6l2.4-2.4" /><path d="M3.4 5.2v4h4M20.6 18.8v-4h-4" /></>,
+  download: <><path d="M12 3.6v11.2M7.8 10.8 12 15l4.2-4.2M4.4 17v2.2a1.4 1.4 0 0 0 1.4 1.4h12.4a1.4 1.4 0 0 0 1.4-1.4V17" /></>,
+  wifi: <><path d="M3.4 9.2a12.6 12.6 0 0 1 17.2 0M6.4 12.6a8.2 8.2 0 0 1 11.2 0M9.4 16a3.8 3.8 0 0 1 5.2 0" /><circle cx="12" cy="19.2" r="1" fill="currentColor" stroke="none" /></>,
+  crownStar: <><path d="m12 3.4 2.3 4.8 5.3.7-3.9 3.7 1 5.2-4.7-2.6-4.7 2.6 1-5.2-3.9-3.7 5.3-.7z" /></>,
 };
 
-export default function Icon({ name, size = 20, strokeWidth = 1.7, style, className, fill, color }) {
-  const body = P[name];
+/* ---------------- 填充变体：选中态 ----------------
+ * 仅给高频「可切换」图标提供实心版本；evenodd 用于挖空内部孔洞，
+ * 保证在任意背景色上都不出现色块穿帮。 */
+const F = {
+  home: <path fillRule="evenodd" d="M2.8 10.5 12 3l9.2 7.5V19a2 2 0 0 1-2 2h-4.4v-6.4H9.2V21H4.8a2 2 0 0 1-2-2z M9.2 14.6h5.6V21H9.2z" fill="currentColor" stroke="none" />,
+  cloud: <path d="M6.8 19.2a4 4 0 0 1-.3-8 5.3 5.3 0 0 1 10.2-1.1 4 4 0 0 1 .6 7.9H6.8z" fill="currentColor" stroke="none" />,
+  message: <path d="M20.4 11.6c0 4-3.8 7.2-8.4 7.2-1 0-2-.2-2.9-.5l-4.2 1.4 1.3-3.6a6.8 6.8 0 0 1-2.6-5.3c0-4 3.8-7.2 8.4-7.2s8.4 3.2 8.4 8z" fill="currentColor" stroke="none" />,
+  pin: <path fillRule="evenodd" d="M12 2.6a7.3 7.3 0 0 0-7.3 7.3c0 5.4 7.3 11.4 7.3 11.4s7.3-6 7.3-11.4A7.3 7.3 0 0 0 12 2.6z M12 7.6a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z" fill="currentColor" stroke="none" />,
+  user: <><circle cx="12" cy="8" r="4" fill="currentColor" stroke="none" /><path d="M4.4 20.6c.6-3.9 3.8-6.4 7.6-6.4s7 2.5 7.6 6.4z" fill="currentColor" stroke="none" /></>,
+  heart: <path d="M20.2 6.8a4.6 4.6 0 0 0-6.6 0L12 8.4l-1.6-1.6a4.6 4.6 0 1 0-6.6 6.6l1.6 1.6L12 21l6.6-6.4 1.6-1.6a4.6 4.6 0 0 0 0-6.2z" fill="currentColor" stroke="none" />,
+  star: <path d="m12 3.6 2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8z" fill="currentColor" stroke="none" />,
+  book: <path d="M4 5.2c2.6-1 5-1 7 0v14c-2-1-4.4-1-7 0zM20 5.2c-2.6-1-5-1-7 0v14c2-1 4.4-1 7 0z" fill="currentColor" stroke="none" />,
+  bell: <><path d="M18.2 8.6a6.2 6.2 0 1 0-12.4 0c0 6.6-2.4 8.2-2.4 8.2h17.2s-2.4-1.6-2.4-8.2z" fill="currentColor" stroke="none" /><path d="M13.7 20.6a2.1 2.1 0 0 1-3.4 0" fill="currentColor" stroke="none" /></>,
+  fish: <><path d="M2.8 12c4-5 8.9-6.4 13.4-4 1.5.7 2.8 1.8 3.9 3.1-1.1 1.3-2.4 2.4-3.9 3.1-4.5 2.4-9.4 1-13.4-4z" fill="currentColor" stroke="none" /><path d="M2.8 12 1.6 15M2.8 12 1.6 9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></>,
+};
+
+/**
+ * Icon
+ * @param {string} name        图标名
+ * @param {number} size        尺寸（默认 20）
+ * @param {number} strokeWidth 线宽（默认 1.7）
+ * @param {boolean} filled     选中态：优先使用实心变体，否则加重线宽
+ * @param {string} label       无障碍标签；传入后由 aria-hidden 切换为 role=img
+ */
+export default function Icon({ name, size = 20, strokeWidth = 1.7, style, className, fill, color, filled, label }) {
+  const hasFilled = !!(filled && F[name]);
+  const body = hasFilled ? F[name] : P[name];
   if (!body) return null;
+  const a11y = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': 'true' };
   return (
     <svg
       viewBox="0 0 24 24" width={size} height={size} className={className}
-      fill={fill || 'none'} stroke="currentColor" strokeWidth={strokeWidth}
-      strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color, ...style }} aria-hidden="true"
+      fill={fill || 'none'} stroke="currentColor"
+      strokeWidth={filled && !hasFilled ? strokeWidth * 1.35 : strokeWidth}
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0, color, ...style }}
+      {...a11y}
     >
       {body}
     </svg>

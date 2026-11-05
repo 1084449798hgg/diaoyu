@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Icon from './icons.jsx';
 
 /** 分数圆环 */
 export function ScoreRing({ score, level, size = 96 }) {
@@ -95,10 +96,14 @@ export function Spinner() {
   return <div className="spinner" />;
 }
 
-export function Empty({ text = '暂无数据', icon = '🎣' }) {
+export function Empty({ text = '暂无数据', icon = 'fish', iconSize = 30 }) {
+  // 兼容历史调用：非 ASCII 图标名（旧 emoji 传参）统一回退到线性鱼图标
+  const glyph = /^[a-zA-Z][a-zA-Z0-9]*$/.test(icon) ? icon : 'fish';
   return (
     <div className="empty">
-      <div style={{ fontSize: 34, marginBottom: 8 }}>{icon}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: 'var(--ink-3)' }}>
+        <Icon name={glyph} size={iconSize} strokeWidth={1.4} />
+      </div>
       {text}
     </div>
   );

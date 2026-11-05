@@ -241,3 +241,45 @@ fishing-app/
 - ECharts 全面切换浅色主题：墨黑主线 + 黄绿渐变面积 + 极淡网格，tooltip 改白底圆角
 - 渔获影像统一 `FishArt`（`components/fishArt.jsx`）：深墨青渐变 + 三线水纹 + 鱼种体型剪影（翘嘴细长 / 鲫鱼圆润 / 草鱼修长）+ 底部压暗，避免占位海报图与卡片文字重复
 - 图标统一 `components/icons.jsx`：40+ 线性图标，24 视框 / 1.7 线宽 / 圆头圆角
+
+### 8.8 v4.1 图标体系与 HIG 精修（web-design-engineer × metago-ui-illustrator × Apple HIG）
+
+定位：**Redesign · Preserve** —— 保留 v4.0 全部设计令牌与五页版式、所有功能契约，只做图标系统重建与精致化打磨。
+
+**图标系统（`frontend/src/components/icons.jsx`）**
+
+| 项 | v4.0 | v4.1 |
+|---|---|---|
+| 数量 | 44 个 | **84 个**（新增天气 / 操作 / 状态三类语义图标） |
+| 规范 | 24 视框 / 1.7 线宽 / 圆头圆角 | 增加 **2.5–21.5 光学安全区**，统一视觉重量 |
+| 选中态 | 仅线宽 1.65→2.1 | 新增 **10 个 `filled` 实心变体**（TabBar 描边→填充） |
+| 无障碍 | `aria-hidden` | 支持 `label` → `role="img" aria-label` |
+
+- **零 emoji**：清理 20 处 emoji 当图标的写法（天气 `SKY_ICON`、空态、发布按钮、鱼种 chip、鱼种图鉴、FISH DEX 六宫格），统一换为线性图标；`Empty` 组件对非 ASCII 图标名做兼容回退
+- 导航面板三个地图选项由「汉字缩写色块」改为统一线性 `navigation` 图标 + 品牌色底
+- 全部 84 个原有 / 新增图标名均校验有定义，零断链
+
+**HIG 精修层（`frontend/src/premium.css` 末尾追加，只覆盖不改版式契约）**
+
+| 维度 | 落地 |
+|---|---|
+| 对比度 | `--ink-3` `#97a09a`（≈2.6:1）→ `#6b7871`（≈4.7:1，达 WCAG AA）；≤9px 标签统一提到 `--ink-2` |
+| 命中区 | 小控件用伪元素扩展至 **44×44px**，视觉尺寸不变 |
+| 焦点 | `:focus-visible` 统一焦点环；登录表单补 `label`/`id` 关联与 `autocomplete` |
+| 动效 | 弹簧缓动令牌、按下 100ms `scale(.97)` 松手回弹、Sheet 弹簧、TabBar 去 1.3× 弹跳改临界阻尼 |
+| 材质 / 排版 | TabBar 近实色 + `blur(20px) saturate(180%)` + 亮顶边；`text-wrap: pretty`、`clamp()` 流体大字号 |
+| 取色 | `oklch()` 派生描边 / 状态色（`@supports` 带回退），清除内联硬编码色 |
+| 无障碍四档 | `prefers-reduced-motion`（位移→交叉淡化，spinner 保留）、`prefers-reduced-transparency`、`prefers-contrast: more`、`prefers-color-scheme: dark`（克制适配画布与控件层，不反转品牌浅色内容层） |
+
+**顺带修复的真实缺陷**
+
+- Sheet 继承 `:root` 的 v3 遗留 `--text:#eaf6fa`（浅青白），在白色弹层上几乎不可读 → 显式锚定 `--ink`
+- 导航面板与详情面板双层 Sheet 叠加 → 打开导航时关闭详情层
+- `theme.css` 的 `fontWeight` 驼峰属性被浏览器忽略 → `font-weight`
+- 未点亮图鉴格的白色鱼图标在浅色卡片上不可见 → 改深墨绿半透明
+
+**部署可靠性（`backend/src/index.js`）**
+
+流式 `compression` 产生 chunked 响应（无 `Content-Length`），部分公网穿透网关对静态资源及较大 API 响应返回 **502**。改为：静态资源按需生成 `.gz` 并以固定 `Content-Length` 发送（首次请求或重新构建后自动重建，无需改构建流程）；流式压缩默认关闭（`ENABLE_STREAM_COMPRESSION=1` 可在有正常反向代理时开启）；API 由 `res.json` 自带 `Content-Length` 直接返回。
+
+**验证**：本地 + 公网端到端全通过 —— 五页零 emoji、填充选中态、44px 命中区、对比度令牌、天气图标（主卡 1 + 逐小时 24）、10 个地图 marker、导航三选项与单层 Sheet、reduced-motion 降级、**0 请求失败 / 0 JS 错误**。

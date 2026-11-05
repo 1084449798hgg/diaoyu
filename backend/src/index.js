@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const path = require('path');
+const fs = require('fs');
+const zlib = require('zlib');
 const rateLimit = require('express-rate-limit');
 
 const config = require('./config');
@@ -24,7 +26,13 @@ const wikiRoutes = require('./modules/wiki/wiki.routes');
 const app = express();
 
 app.use(cors());
-app.use(compression()); // gzip/br 压缩：1.25MB 构建产物 → ~415KB 传输，内网穿透场景加载快 3 倍
+// 流式压缩会产生 chunked 响应（无 Content-Length），部分内网穿透网关会返回 502。
+// 默认关闭：静态资源由下方「预压缩 + 固定 Content-Length」中间件处理，
+// API 小 JSON 由 res.json 自带 Content-Length 直接返回，两者均可靠。
+// 正式部署在有正常反向代理时，可用 ENABLE_STREAM_COMPRESSION=1 开启流式压缩。
+if (process.env.ENABLE_STREAM_COMPRESSION === '1') {
+  app.use(compression({ filter: (req) => !req.path.startsWith('/assets/') }));
+}
 app.use(express.json({ limit: '2mb' }));
 
 // 限频：全局 + 登录防刷（NFR-03 新用户发帖限频在 catches 模块内实现）
@@ -52,6 +60,37 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 前端构建产物托管（单端口部署）
 const distDir = path.join(__dirname, '../../frontend/dist');
+
+// 预压缩静态资源：按需生成 .gz 并以固定 Content-Length 发送（非 chunked）。
+// 首次请求或前端重新构建后自动重建缓存，无需改动构建流程。
+app.use('/assets', (req, res, next) => {
+  if (!/\bgzip\b/.test(req.headers['accept-encoding'] || '')) return next();
+  const name = path.basename(req.path);
+  if (!/\.(js|css|json|svg)$/.test(name)) return next();
+  const orig = path.join(distDir, 'assets', name);
+  const gzFile = orig + '.gz';
+  try {
+    const src = fs.statSync(orig);
+    const cached = fs.existsSync(gzFile) ? fs.statSync(gzFile) : null;
+    if (!cached || cached.mtimeMs < src.mtimeMs) {
+      fs.writeFileSync(gzFile, zlib.gzipSync(fs.readFileSync(orig), { level: 9 }));
+    }
+    const buf = fs.readFileSync(gzFile);
+    const type = name.endsWith('.js') ? 'application/javascript; charset=UTF-8'
+      : name.endsWith('.css') ? 'text/css; charset=UTF-8'
+      : name.endsWith('.svg') ? 'image/svg+xml' : 'application/json; charset=UTF-8';
+    res.status(200).set({
+      'Content-Type': type,
+      'Content-Encoding': 'gzip',
+      'Content-Length': buf.length,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Vary': 'Accept-Encoding',
+    }).end(buf);
+  } catch (_e) {
+    return next();
+  }
+});
+
 app.use(express.static(distDir));
 app.get('*', (req, res, next) => {
   if (req.url.startsWith('/api/') || req.url.startsWith('/uploads/')) return next(notFound('接口不存在'));

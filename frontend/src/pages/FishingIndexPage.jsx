@@ -5,7 +5,15 @@ import { Spinner, Sheet, Segmented } from '../components/ui.jsx';
 import { PressureChart, ProbabilityChart } from '../components/Charts.jsx';
 import Icon from '../components/icons.jsx';
 
-const SKY_ICON = { 晴: '☀️', 多云: '⛅', 阴: '☁️', 小雨: '🌦️', 中雨: '🌧️', 大雨: '⛈️' };
+/* 天空状况 → 统一线性图标（零 emoji，图标语义与全套一致） */
+const SKY_ICON = {
+  晴: 'sun', 多云: 'cloudSun', 阴: 'cloud', 小雨: 'cloudDrizzle',
+  中雨: 'cloudRain', 大雨: 'cloudLightning', 雷阵雨: 'cloudLightning',
+  阵雨: 'cloudRain', 雪: 'cloudSnow', 雾: 'cloudFog', 霾: 'cloudFog',
+};
+function SkyGlyph({ sky, size = 15 }) {
+  return <Icon name={SKY_ICON[sky] || 'cloud'} size={size} strokeWidth={1.6} />;
+}
 
 function biteText(score) {
   if (score >= 82) return ['爆护', 'tag-green'];
@@ -231,7 +239,7 @@ export default function FishingIndexPage({ onNavigateToMap }) {
               <div>
                 <div className="wx-temp">{Math.round(cur.temp)}<sup>°</sup></div>
                 <div className="wx-cond">
-                  {SKY_ICON[cur.skycon] || '☁️'} {cur.skycon || '阴'}
+                  <SkyGlyph sky={cur.skycon} size={15} /> {cur.skycon || '阴'}
                   <span>体感 {Math.round(cur.temp - 1)}° · 今日 {Math.round(Math.min(...hourly.map((h) => h.temp)))}°~{Math.round(Math.max(...hourly.map((h) => h.temp)))}°</span>
                 </div>
               </div>
@@ -397,7 +405,7 @@ export default function FishingIndexPage({ onNavigateToMap }) {
                     return (
                       <tr key={h.hour}>
                         <td className="hm">{hh(h.hour)}</td>
-                        <td>{SKY_ICON[h.skycon] || '🌤️'}</td>
+                        <td><SkyGlyph sky={h.skycon} size={14} /></td>
                         <td>{h.temp}</td>
                         <td>{h.pressure}</td>
                         <td>{Math.round(h.windSpeed * 3.6)}</td>

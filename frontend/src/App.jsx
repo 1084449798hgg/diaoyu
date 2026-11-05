@@ -88,10 +88,16 @@ export default function App() {
         </button>
       )}
 
-      <nav className="tabbar">
+      <nav className="tabbar" aria-label="主导航">
         {TABS.map((t) => (
-          <button key={t.key} className={`tabbar-item ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
-            <Icon name={t.icon} size={21} strokeWidth={tab === t.key ? 2.1 : 1.65} />
+          <button
+            key={t.key}
+            className={`tabbar-item ${tab === t.key ? 'active' : ''}`}
+            onClick={() => setTab(t.key)}
+            aria-label={t.label}
+            aria-current={tab === t.key ? 'page' : undefined}
+          >
+            <Icon name={t.icon} size={21} filled={tab === t.key} />
             <span>{t.label}</span>
           </button>
         ))}
@@ -125,7 +131,7 @@ function LoginScreen() {
       background: 'radial-gradient(90% 60% at 80% 0%, rgba(216,248,79,.13), transparent 58%), linear-gradient(168deg, #16342a 0%, #0d1a15 55%, #08120e 100%)',
     }}>
       {/* 水波纹装饰 */}
-      <svg viewBox="0 0 390 300" style={{ position: 'absolute', left: 0, right: 0, bottom: -40, width: '100%', opacity: .5 }}>
+      <svg viewBox="0 0 390 300" aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: -40, width: '100%', opacity: .5 }}>
         <path d="M0 180c60-24 110 12 170-8s120-36 220-6" fill="none" stroke="rgba(216,248,79,.18)" strokeWidth="1.4" />
         <path d="M0 210c70-26 120 14 180-10s130-38 210-4" fill="none" stroke="rgba(216,248,79,.12)" strokeWidth="1.4" />
         <path d="M0 240c80-28 130 16 196-12s126-40 194-2" fill="none" stroke="rgba(216,248,79,.08)" strokeWidth="1.4" />
@@ -145,13 +151,13 @@ function LoginScreen() {
 
         <div style={{ background: '#fff', borderRadius: 26, padding: '22px 20px 20px', boxShadow: '0 24px 60px rgba(0,0,0,.3)' }}>
           <div className="field" style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.1em', display: 'block', marginBottom: 7 }}>手机号</label>
-            <input className="input" value={phone} maxLength={11} inputMode="numeric" placeholder="请输入手机号"
+            <label htmlFor="login-phone" style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.1em', display: 'block', marginBottom: 7 }}>手机号</label>
+            <input id="login-phone" className="input" type="tel" autoComplete="tel" value={phone} maxLength={11} inputMode="numeric" placeholder="请输入手机号"
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} />
           </div>
           <div className="field" style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.1em', display: 'block', marginBottom: 7 }}>验证码 · 演示固定 123456</label>
-            <input className="input" value={code} maxLength={6} inputMode="numeric" placeholder="6 位验证码"
+            <label htmlFor="login-code" style={{ fontSize: 9.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.1em', display: 'block', marginBottom: 7 }}>验证码 · 演示固定 123456</label>
+            <input id="login-code" className="input" autoComplete="one-time-code" value={code} maxLength={6} inputMode="numeric" placeholder="6 位验证码"
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
           </div>
           {err && <p style={{ fontSize: 11, color: '#b23b3b', margin: '0 0 10px' }}>{err}</p>}

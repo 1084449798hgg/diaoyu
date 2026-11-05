@@ -312,7 +312,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
                     <path d="M40 21c6-3.4 13-4.4 19-3.4M40 39c6 3.4 13 4.4 19 3.4" stroke="#fff" strokeWidth="1.1" opacity=".45" fill="none" />
                   </svg>
                 </div>
-                <div className="species-name">{s.species}<em>{s.emoji}</em></div>
+                <div className="species-name">{s.species}<em style={{ display: 'flex' }}><Icon name="right" size={11} strokeWidth={1.8} /></em></div>
               </button>
             ))}
           </div>

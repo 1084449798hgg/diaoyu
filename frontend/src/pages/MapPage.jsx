@@ -344,7 +344,7 @@ export default function MapPage({ onNavigateToCommunity }) {
         ))}
       </div>
 
-      {!loading && filtered.length === 0 && <Empty text="当前筛选下暂无钓点" icon="🗺️" />}
+      {!loading && filtered.length === 0 && <Empty text="当前筛选下暂无钓点" icon="map" />}
 
       {/* 钓点详情 */}
       <Sheet open={!!selected} onClose={() => setSelected(null)}>
@@ -387,7 +387,7 @@ export default function MapPage({ onNavigateToCommunity }) {
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="p-btn p-btn-dark" style={{ flex: 1 }} onClick={() => openNav(selected)}>
+              <button className="p-btn p-btn-dark" style={{ flex: 1 }} onClick={() => { setSelected(null); openNav(selected); }}>
                 <Icon name="locate" size={14} /> 导航前往
               </button>
               {!selected.banned && (
@@ -436,7 +436,7 @@ export default function MapPage({ onNavigateToCommunity }) {
               {NAV_ITEMS.map((it) => (
                 <button key={it.key} onClick={() => goNav(it.key)}
                   style={{ display: 'flex', alignItems: 'center', gap: 13, width: '100%', padding: '14px 15px', borderRadius: 16, background: 'var(--surface-2)', border: '1px solid var(--hair)', textAlign: 'left' }}>
-                  <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 800, boxShadow: `0 6px 16px ${it.color}55` }}>{it.name[0]}</span>
+                  <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: `0 6px 16px ${it.color}55` }}><Icon name="navigation" size={19} strokeWidth={1.9} /></span>
                   <span style={{ flex: 1 }}>
                     <b style={{ fontSize: 13.5, fontWeight: 800, display: 'block' }}>{it.name}</b>
                     <span style={{ fontSize: 10.5, color: 'var(--ink-3)' }}>{it.desc}</span>
@@ -465,7 +465,7 @@ export default function MapPage({ onNavigateToCommunity }) {
               width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10,
               padding: '14px 15px', marginBottom: 8, borderRadius: 14,
               background: active ? 'var(--lime-soft)' : 'var(--surface-2)',
-              border: `1px solid ${active ? '#dcecab' : 'transparent'}`,
+              border: `1px solid ${active ? 'var(--line-lime)' : 'transparent'}`,
             }}>
             <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700 }}>{label}</span>
             {active && <Icon name="check" size={15} color="#4d7c3a" strokeWidth={2.4} />}

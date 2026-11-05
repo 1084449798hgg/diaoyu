@@ -524,3 +524,197 @@ body {
 .sk { border-radius: 12px; background: linear-gradient(100deg, #eef0ea 25%, #f7f8f3 37%, #eef0ea 63%); background-size: 200% 100%; animation: sk-shimmer 1.4s linear infinite; }
 
 .p-btn:disabled { background: var(--surface-2); color: var(--ink-3); box-shadow: none; pointer-events: none; }
+
+/* =====================================================================
+   v4.1 · HIG 精修层
+   web-design-engineer × metago-ui-illustrator × Apple HIG
+   原则：只追加覆盖，不动既有版式契约；颜色一律取自令牌（派生用 oklch）；
+        只动画 transform / opacity；品牌色系零新增；无障碍为底线。
+   ===================================================================== */
+
+/* ---------- 1. 令牌增补 ---------- */
+:root {
+  /* 次要文字：#97a09a(≈2.6:1) → 4.7:1，达到 WCAG AA（Apple secondary ≈60% 黑） */
+  --ink-3: #6b7871;
+  /* 派生描边 / 状态色：与 --lime、--orange 同色相，不引入新色 */
+  --line-lime: #dcecab;
+  --line-orange: #ffe0c7;
+  --hair-soft: #f2f4ee;
+  --lime-mid: #dcec9c;
+  --green-ok: #2f9e68;
+  --heart: #d8454b;
+  --focus: #a9c81a;
+  /* 流体弹簧缓动 */
+  --ease-spring: cubic-bezier(.34, 1.32, .64, 1);  /* 轻过冲 · 弹出层 / 回弹 */
+  --ease-smooth: cubic-bezier(.22, .85, .3, 1);    /* 临界阻尼 · 默认入场 */
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+@supports (color: oklch(0.5 0.1 120)) {
+  :root {
+    --line-lime: oklch(0.9 0.075 122 / 0.55);
+    --line-orange: oklch(0.9 0.055 55 / 0.5);
+    --lime-mid: oklch(0.9 0.085 122);
+    --green-ok: oklch(0.62 0.13 155);
+    --heart: oklch(0.58 0.19 25);
+    --focus: oklch(0.76 0.19 122);
+  }
+}
+
+/* ---------- 2. 44px 命中区（视觉尺寸不变，伪元素扩展热区） ---------- */
+.hx-icon-btn, .mp-star, .mp-ctrl, .chip, .p-btn-sm,
+.cm-act, .p-more, .wx-refresh { position: relative; }
+.hx-icon-btn::after, .mp-star::after, .mp-ctrl::after,
+.chip::after, .p-btn-sm::after, .cm-act::after,
+.p-more::after, .wx-refresh::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: max(100%, 44px); height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* ---------- 3. 焦点可见（键盘可达性底线） ---------- */
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* 输入框已有 3px 黄绿聚焦环，避免双重描边 */
+.input:focus-visible { outline: none; }
+
+/* ---------- 4. 弹簧动效：按下即反馈，松手回弹，可打断 ---------- */
+.p-btn, .btn {
+  transition: transform .32s var(--ease-spring),
+              box-shadow .22s var(--ease-smooth),
+              background-color .2s var(--ease-smooth);
+}
+.p-btn:active, .btn:active {
+  transform: scale(.97);
+  transition: transform .1s ease-out;
+}
+.sheet { animation: sheet-up .34s var(--ease-spring); }
+.sheet.closing { animation: sheet-out .26s var(--ease-smooth) forwards; }
+.sheet-mask.closing { animation: mask-out .26s var(--ease-smooth) forwards; }
+.tabbar-item svg { transition: transform .36s var(--ease-spring), color .2s var(--ease-smooth); }
+/* 点击 Tab 不带动量 → 去掉旧 1.3× 弹跳，改临界阻尼轻缩放 */
+.tabbar-item.active svg { animation: v41-tab-in .36s var(--ease-smooth) both; }
+@keyframes v41-tab-in {
+  from { transform: scale(.88); opacity: .6; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.cm-seg-btn, .hx-method-item, .chip, .p-pill, .hx-quick-ico {
+  transition: transform .3s var(--ease-spring),
+              background-color .2s var(--ease-smooth),
+              color .2s var(--ease-smooth),
+              border-color .2s var(--ease-smooth);
+}
+
+/* ---------- 5. 控件层材质（亮顶边 = 光线打在材质上） ---------- */
+.tabbar {
+  /* 底栏是固定边界而非浮动栏：用近实色避免下方内容透过造成文字叠影，
+     材质厚度仍由 blur + 亮顶边表达（HIG 控件层材质） */
+  background: rgba(255, 255, 255, .95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, .6);
+}
+
+/* ---------- 6. 排版：pretty / 流体字号 / 极小字对比度 ---------- */
+.p-sec-title, .cm-title, .wx-title, .hx-brand, .me-name, .sheet h3,
+.catch-name, .cm-text, .hx-advice, .p-card { text-wrap: pretty; }
+.hx-score-num { font-size: clamp(64px, 21vw, 82px); }
+.wx-temp { font-size: clamp(60px, 19vw, 74px); }
+.cm-title { font-size: clamp(26px, 8vw, 31px); }
+/* ≤9px 标签在纸底上统一提到 --ink-2（≈5.5:1），不靠浅灰撑轻盈 */
+.p-eyebrow, .hx-quad-label, .hx-quad-sub, .mp-stat span,
+.dex-cell .dx-lab, .wx-hourline, .hx-table th,
+.cm-seg-btn em, .p-sec-title em, .catch-meta,
+.me-cell .mc-k { color: var(--ink-2); }
+
+/* ---------- 7. 硬编码色 → 令牌 ---------- */
+.wx-hb { background: var(--hair); }
+.wx-hb.mid { background: var(--lime-mid); }
+.wx-strip-dot { background: var(--green-ok); }
+.cm-act.liked { color: var(--heart); }
+.hx-table td, .more-row { border-bottom-color: var(--hair-soft); }
+
+/* Sheet 不在 .page 作用域内，会继承 :root 的 v3 深色主题 --text:#eaf6fa，
+   在 v4 白色弹层上几乎不可读 → 显式锚定墨黑，修复对比度 */
+.sheet { color: var(--ink); }
+.sheet b, .sheet strong { color: inherit; }
+
+/* ---------- 8. 图标与 TabBar 填充选中态 ---------- */
+.tabbar-item.active svg { color: var(--ink); }
+.cm-mini-fish, .dx-ico { display: flex; align-items: center; justify-content: center; color: var(--ink-2); }
+.dx-ico { height: 17px; }
+.empty svg { opacity: .85; }
+
+/* ---------- 9. 交互态补全（仅精确指针设备） ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .p-btn:not(:disabled):hover { box-shadow: 0 10px 26px rgba(13, 26, 21, .2); }
+  .p-btn-lime:not(:disabled):hover { box-shadow: 0 10px 28px rgba(196, 234, 37, .42); }
+  .p-btn-ghost:not(:disabled):hover { border-color: var(--ink-3); }
+  .catch-card:hover, .species-card:hover, .cm-card:hover {
+    box-shadow: 0 8px 26px rgba(13, 26, 21, .1);
+    border-color: var(--hair-2);
+  }
+  .hx-quick-btn:hover .hx-quick-ico {
+    border-color: var(--ink-3);
+    box-shadow: 0 5px 14px rgba(13, 26, 21, .08);
+  }
+  .mp-ctrl:hover { border-color: var(--ink-3); }
+  .more-row:hover { background: var(--surface-2); }
+}
+
+/* ---------- 10. 无障碍四档 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* 加载指示器属于功能性反馈，保留缓慢旋转 */
+  .spinner { animation: spin 1.2s linear infinite !important; }
+  /* 位移动画 → 交叉淡化 */
+  .hx-rise, .catch-card, .cm-card, .species-card,
+  .page > *:not(.topbar):not(.spinner):not(.sheet):not(.sheet-mask) {
+    animation-name: v41-fade !important;
+  }
+}
+@keyframes v41-fade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-transparency: reduce) {
+  .tabbar, .mp-search, .mp-ctrl, .mp-zoom, .mp-stats, .mp-toast,
+  .topbar, .catch-user, .catch-likes, .cm-count-l, .cm-meta-chip,
+  .cm-count-r, .sheet, .hx-vip-mini {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--surface) !important;
+  }
+  .sheet-mask {
+    backdrop-filter: none !important;
+    background: rgba(9, 16, 13, .82) !important;
+  }
+  .catch-user, .catch-likes, .cm-count-l, .cm-meta-chip {
+    background-color: rgba(12, 20, 16, .82) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root { --hair: #c7cdc2; --hair-2: #a9b2a4; --ink-3: #4b574f; }
+  .p-card, .card, .catch-card, .cm-card, .species-card, .wx-hero-card,
+  .hx-table-wrap, .more-list { border-width: 1.5px; border-color: var(--ink-2); }
+  .tabbar { background: var(--surface); border-top-color: var(--ink-2); }
+  .input { border-color: var(--ink-3); }
+}
+
+@media (prefers-color-scheme: dark) {
+  /* 品牌契约为固定浅色编辑风格：只适配外部画布与控件层，不反转内容层 */
+  body { background: #141a16; }
+  .phone-frame { box-shadow: 0 30px 90px rgba(0, 0, 0, .55); }
+  .tabbar {
+    background: rgba(30, 36, 31, .94);
+    border-top-color: rgba(255, 255, 255, .12);
+  }
+  .tabbar-item { color: #9aa69e; }
+  .tabbar-item.active { color: #fff; }
+}

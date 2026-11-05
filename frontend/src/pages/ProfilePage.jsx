@@ -17,8 +17,8 @@ function TankFish({ fish, label = true }) {
       animation: `swim ${dur}s linear ${fish.id * 0.7}s infinite`,
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
-      <span style={{ fontSize: size, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.35))' }}>
-        {fish.weightKg && fish.weightKg >= 2 ? '🐟' : '🐠'}
+      <span style={{ display: 'flex', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.28))' }}>
+        <Icon name="fish" size={size} strokeWidth={1.7} color="rgba(255,255,255,.94)" />
       </span>
       {label && (
         <span style={{
@@ -191,14 +191,14 @@ export default function ProfilePage({ onPublish }) {
                   if (it) {
                     return (
                       <div key={i} className="dex-cell on">
-                        <span className="dx-ico">{it.emoji}</span>
+                        <span className="dx-ico"><Icon name="fish" size={17} color="#5b7024" /></span>
                         <span className="dx-lab" style={{ color: '#5b7024' }}>{it.species}</span>
                       </div>
                     );
                   }
                   return (
                     <div key={i} className="dex-cell">
-                      <Icon name="fish" size={15} color="rgba(255,255,255,.32)" />
+                      <Icon name="fish" size={15} color="rgba(13,26,21,.28)" />
                       <span className="dx-lab" style={{ color: 'rgba(255,255,255,.42)' }}>未点亮</span>
                     </div>
                   );
@@ -284,8 +284,8 @@ export default function ProfilePage({ onPublish }) {
                 <span style={{ fontSize: 10, color: 'rgba(20,50,35,.55)' }}>鱼缸空空的，记录第一尾渔获吧</span>
               </div>
             )}
-            <span style={{ position: 'absolute', left: 12, bottom: 4, fontSize: 20, opacity: .65 }}>🌿</span>
-            <span style={{ position: 'absolute', right: 18, bottom: 4, fontSize: 24, opacity: .6 }}>🌿</span>
+            <Icon name="leaf" size={18} style={{ position: 'absolute', left: 12, bottom: 4, color: 'rgba(20,50,35,.42)' }} />
+            <Icon name="leaf" size={22} style={{ position: 'absolute', right: 18, bottom: 4, color: 'rgba(20,50,35,.4)', transform: 'scaleX(-1)' }} />
           </div>
 
           {/* 出钓日志 */}
@@ -311,7 +311,7 @@ export default function ProfilePage({ onPublish }) {
             </div>
           )}
 
-          {logs.length === 0 && <Empty text="还没有日志，记下第一条吧" icon="📖" />}
+          {logs.length === 0 && <Empty text="还没有日志，记下第一条吧" icon="book" />}
           {logs.map((l) => (
             <div key={l.id} className="p-card" style={{ padding: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
@@ -426,8 +426,8 @@ export default function ProfilePage({ onPublish }) {
               border: `1px solid ${it.unlocked ? '#dcecab' : 'var(--hair)'}`,
               borderRadius: 12, padding: '9px 2px', textAlign: 'center',
             }}>
-              <div style={{ fontSize: it.unlocked ? 19 : 14, filter: it.unlocked ? 'none' : 'grayscale(1) opacity(.35)' }}>
-                {it.unlocked ? it.emoji : '❓'}
+              <div style={{ display: 'flex', justifyContent: 'center', filter: it.unlocked ? 'none' : 'grayscale(1) opacity(.35)' }}>
+                <Icon name={it.unlocked ? 'fish' : 'helpCircle'} size={it.unlocked ? 19 : 15} strokeWidth={1.6} color={it.unlocked ? '#4d6318' : 'var(--ink-3)'} />
               </div>
               <div style={{ fontSize: 9, marginTop: 3, color: it.unlocked ? '#4d6318' : 'var(--ink-3)', fontWeight: it.unlocked ? 700 : 400 }}>
                 {it.unlocked ? it.species : '未解锁'}

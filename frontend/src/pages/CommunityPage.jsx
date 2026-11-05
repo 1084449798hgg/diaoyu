@@ -129,7 +129,7 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
           看渔获<i style={{ width: 3, height: 3, borderRadius: 3, background: 'var(--ink-3)', display: 'inline-block' }} />
           找钓友<i style={{ width: 3, height: 3, borderRadius: 3, background: 'var(--ink-3)', display: 'inline-block' }} />
           {filter?.spotName || '杭州市'}
-          {filter?.spotId && <button className="p-pill p-pill-line" style={{ height: 22, marginLeft: 6, fontSize: 9 }} onClick={onClearFilter}>清除筛选 ✕</button>}
+          {filter?.spotId && <button className="p-pill p-pill-line" style={{ height: 22, marginLeft: 6, fontSize: 9 }} onClick={onClearFilter}>清除筛选 <Icon name="x" size={9} strokeWidth={2.2} /></button>}
         </div>
       </div>
 
@@ -156,7 +156,7 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
       </div>
 
       {loading && <Spinner />}
-      {!loading && shown.length === 0 && <Empty text="这个分类下还没有动态" icon="🐟" />}
+      {!loading && shown.length === 0 && <Empty text="这个分类下还没有动态" icon="fish" />}
 
       {/* 双列瀑布流 */}
       {!loading && shown.length > 0 && (
@@ -168,7 +168,7 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
                 <div className="cm-media">
                   <CardMedia c={c} h={h} seed={idx} />
                   <div className="cm-badges-l">
-                    <span className="cm-mini-fish">{fishEmoji(c.fishSpecies)}</span>
+                    <span className="cm-mini-fish"><Icon name="fish" size={12} strokeWidth={1.8} /></span>
                     <span className="cm-count-l">×{c.fishCount || 1}</span>
                   </div>
                   <div className="cm-count-r"><Icon name="comment" size={9} strokeWidth={2} />{c.commentsCount ?? 0}</div>
@@ -249,12 +249,6 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
   );
 }
 
-function fishEmoji(s = '') {
-  if (/鲤|鲫/.test(s)) return '🐟';
-  if (/翘嘴|白条/.test(s)) return '🐠';
-  if (/鲈|鳜|黑鱼/.test(s)) return '🐡';
-  return '🐟';
-}
 function methodLabel(c) {
   if (c.weightKg && c.weightKg > 2) return '海钓';
   if (c.baitType === '假饵') return '路亚';

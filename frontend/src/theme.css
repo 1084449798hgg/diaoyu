@@ -380,7 +380,7 @@ textarea.input { resize: none; min-height: 88px; }
   border-bottom: 1px solid var(--line);
 }
 .hourly-table td { text-align: center; padding: 7px 5px; border-bottom: 1px solid rgba(120,200,220,0.07); color: var(--text-2); }
-.hourly-table td.hm { color: var(--text); fontWeight: 700; }
+.hourly-table td.hm { color: var(--text); font-weight: 700; }
 .hourly-table tr:last-child td { border-bottom: none; }
 
 /* 赛博鱼缸游动动画 */
