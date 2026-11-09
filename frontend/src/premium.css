@@ -958,6 +958,7 @@ body {
   background: var(--lime); color: var(--forest); display: flex; align-items: center; justify-content: center;
 }
 .rs-entry-txt { flex: 1; min-width: 0; position: relative; }
+.rs-entry-txt > span { display: block; }
 .rs-entry-en { font-size: 8px; letter-spacing: .24em; font-weight: 800; color: var(--lime); }
 .rs-entry-cn { font-family: var(--font-serif); font-size: 17px; font-weight: 900; letter-spacing: .05em; margin-top: 2px; }
 .rs-entry-sub { font-size: 10px; color: rgba(255,255,255,.6); margin-top: 3px; }
@@ -976,3 +977,167 @@ body {
 .rs-entry-line b { font-family: var(--font-serif); font-size: 13px; font-weight: 900; display: block; }
 .rs-entry-line em { font-style: normal; font-size: 8px; letter-spacing: .18em; color: var(--ink-3); font-weight: 700; }
 .rs-entry-line > svg { color: var(--ink-3); }
+
+/* =====================================================================
+   v6 写实鱼素材 —— 渔获卡 / 鱼种卡 / 鱼种图鉴
+   ===================================================================== */
+
+/* ---- 渔获卡：透明底写实鱼照铺在深墨青水底上 ---- */
+.fish-art { position: relative; overflow: hidden; }
+.fish-art-waves, .fish-art-silhouette { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fish-art-photo {
+  position: absolute; left: 50%; top: 50%;
+  width: 92%; height: 78%; object-fit: contain; object-position: center;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .34));
+  will-change: transform;
+}
+.fish-art-fade {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, transparent 50%, rgba(6, 14, 12, .76) 100%);
+}
+/* 暂无写实素材的鱼种：弱化为「标本待补」占位，避免与写实图混排时突兀 */
+.fish-art-silhouette { opacity: .5; }
+.fish-art-pending {
+  position: absolute; right: 10px; top: 10px; z-index: 2;
+  font-size: 7px; letter-spacing: .18em; font-weight: 700;
+  color: rgba(255, 255, 255, .42);
+}
+
+/* ---- 首页本地热门鱼种：有写实图时用深底突出银白鱼体 ---- */
+.species-photo { width: 100%; height: 100%; object-fit: contain; padding: 6px 4px; filter: drop-shadow(0 5px 7px rgba(0, 0, 0, .3)); }
+
+/* ---- 鱼种图鉴页 ---- */
+.fa-page { padding-bottom: 40px; }
+.fa-rise { animation: rsRise .58s cubic-bezier(.22, .85, .3, 1) both; }
+
+.fa-topbar { display: flex; align-items: center; gap: 12px; padding: 14px 18px 12px; }
+.fa-back, .fa-info {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--hair);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink); cursor: pointer; transition: transform .14s ease;
+}
+.fa-back:active, .fa-info:active { transform: scale(.93); }
+.fa-brand { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.fa-brand-cn { font-family: var(--font-serif); font-size: 18px; font-weight: 900; letter-spacing: .12em; }
+.fa-brand-en { font-size: 8px; letter-spacing: .22em; color: var(--ink-3); font-weight: 700; }
+
+/* 墨绿 Hero */
+.fa-hero {
+  position: relative; margin: 4px 16px 0; padding: 26px 22px 24px; min-height: 226px;
+  border-radius: var(--r-xl); overflow: hidden; color: #fff;
+  background: linear-gradient(150deg, #14281f 0%, #0a1611 72%);
+  box-shadow: 0 16px 36px rgba(13, 26, 21, .18);
+}
+.fa-hero-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.fa-hero-eyebrow { position: relative; display: flex; align-items: center; gap: 6px; font-size: 8px; letter-spacing: .24em; font-weight: 800; color: var(--lime); }
+.fa-hero-title { position: relative; font-family: var(--font-serif); font-size: 38px; line-height: 1.18; font-weight: 900; letter-spacing: .06em; margin: 14px 0 0; }
+.fa-hero-sub { position: relative; font-size: 10.5px; line-height: 1.8; color: rgba(255, 255, 255, .62); margin-top: 10px; }
+.fa-hero-count { position: relative; display: flex; align-items: flex-end; gap: 9px; margin-top: 18px; }
+.fa-hero-count b { font-family: var(--font-num); font-size: 44px; font-weight: 800; line-height: .9; color: var(--lime); }
+.fa-hero-count span { font-size: 7.5px; letter-spacing: .2em; font-weight: 700; line-height: 1.5; color: rgba(255, 255, 255, .5); }
+.fa-hero-fish {
+  position: absolute; right: -26px; bottom: 12px; width: 62%;
+  opacity: .92; transform: rotate(-6deg);
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .42));
+}
+.fa-hero-watermark { position: absolute; right: 14px; top: 13px; font-size: 8px; letter-spacing: .3em; font-weight: 700; color: rgba(255, 255, 255, .16); }
+
+/* 分类筛选 */
+.fa-seg { display: flex; gap: 5px; margin: 16px 16px 0; padding: 4px; border: 1px solid var(--hair); border-radius: var(--r-md); background: var(--surface); }
+.fa-seg button {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 4px; border: 0; border-radius: 11px; background: transparent;
+  font-size: 11.5px; font-weight: 700; color: var(--ink-2); cursor: pointer;
+}
+.fa-seg button.on { background: var(--forest); color: #fff; }
+.fa-seg button em { font-style: normal; font-family: var(--font-num); font-size: 9px; opacity: .55; }
+.fa-seg button.on em { color: var(--lime); opacity: 1; }
+
+.fa-list-head { display: flex; align-items: flex-end; justify-content: space-between; margin: 20px 18px 10px; }
+.fa-list-head b { font-family: var(--font-serif); font-size: 17px; font-weight: 900; }
+.fa-list-head span { display: block; font-size: 8px; letter-spacing: .2em; font-weight: 700; color: var(--ink-3); margin-top: 2px; }
+.fa-list-head em { font-style: normal; font-size: 10px; color: var(--ink-3); }
+
+/* 标本卡 */
+.fa-list { padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
+.fa-card {
+  display: block; width: 100%; padding: 0; text-align: left; cursor: pointer;
+  border: 1px solid var(--hair); border-radius: var(--r-lg); overflow: hidden;
+  background: var(--surface); box-shadow: var(--shadow-card);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.fa-card:active { transform: scale(.99); }
+.fa-card-stage { position: relative; height: 158px; overflow: hidden; background: linear-gradient(155deg, #1a3329 0%, #0b1813 78%); }
+.fa-card-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(216, 248, 79, .09) .8px, transparent .8px); background-size: 14px 14px; }
+.fa-card-stage img {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 88%; height: 78%; object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .38));
+}
+.fa-card-no { position: absolute; left: 14px; top: 12px; font-size: 8px; letter-spacing: .18em; font-weight: 700; color: rgba(255, 255, 255, .5); }
+.fa-card-no b { color: var(--lime); font-family: var(--font-num); font-size: 11px; }
+.fa-card-en { position: absolute; right: 14px; top: 12px; font-size: 7.5px; letter-spacing: .18em; font-weight: 700; color: rgba(255, 255, 255, .3); }
+.fa-card-group { position: absolute; left: 14px; bottom: 11px; font-size: 7.5px; letter-spacing: .18em; font-weight: 700; color: rgba(255, 255, 255, .42); }
+.fa-card-body { padding: 14px 16px 15px; }
+.fa-card-name { display: flex; align-items: center; justify-content: space-between; }
+.fa-card-name b { font-family: var(--font-serif); font-size: 22px; font-weight: 900; letter-spacing: .06em; }
+.fa-card-arrow { color: var(--ink-3); }
+.fa-card-latin { font-size: 9px; font-style: italic; color: var(--ink-3); margin-top: 2px; letter-spacing: .04em; }
+.fa-card-alias { font-size: 10.5px; color: var(--ink-2); margin-top: 8px; }
+.fa-card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+.fa-card-tags span { font-size: 9px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--hair); background: var(--surface-2); color: var(--ink-2); }
+.fa-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 13px; padding-top: 12px; border-top: 1px dashed var(--hair-2); }
+.fa-card-stats div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fa-card-stats span { font-size: 8.5px; color: var(--ink-3); }
+.fa-card-stats b { font-size: 11px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.fa-foot { display: flex; align-items: center; gap: 8px; margin: 22px 20px 0; font-size: 10px; line-height: 1.6; color: var(--ink-3); }
+.fa-attr {
+  display: flex; align-items: center; justify-content: space-between;
+  width: calc(100% - 32px); margin: 14px 16px 0; padding: 13px 15px;
+  border: 1px solid var(--hair-2); border-radius: var(--r-md);
+  background: var(--surface); font-size: 10.5px; color: var(--ink-2); cursor: pointer;
+}
+
+/* 详情 Sheet */
+.fa-detail-stage { position: relative; height: 176px; margin-bottom: 14px; border-radius: var(--r-md); overflow: hidden; background: linear-gradient(155deg, #1a3329, #0b1813); }
+.fa-detail-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(216, 248, 79, .08) .8px, transparent .8px); background-size: 14px 14px; }
+.fa-detail-stage img { position: absolute; inset: 0; width: 100%; height: 100%; padding: 12px; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .35)); }
+.fa-detail-no { position: absolute; right: 12px; bottom: 10px; font-size: 8px; letter-spacing: .18em; font-weight: 700; color: rgba(255, 255, 255, .45); }
+.fa-detail-head { display: flex; align-items: baseline; gap: 9px; }
+.fa-detail-head b { font-family: var(--font-serif); font-size: 24px; font-weight: 900; letter-spacing: .06em; }
+.fa-detail-head span { font-size: 9px; font-style: italic; color: var(--ink-3); }
+.fa-detail-alias { font-size: 10.5px; color: var(--ink-2); margin: 5px 0 14px; }
+.fa-detail-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fa-detail-cell { display: flex; gap: 8px; padding: 10px; border: 1px solid var(--hair); border-radius: var(--r-sm); background: var(--surface-2); }
+.fa-detail-ico { flex-shrink: 0; margin-top: 2px; color: var(--forest); }
+.fa-detail-cell em { display: block; font-style: normal; font-size: 7px; letter-spacing: .14em; font-weight: 700; color: var(--ink-3); }
+.fa-detail-cell b { display: block; font-size: 10px; margin-top: 2px; }
+.fa-detail-cell strong { display: block; font-size: 10.5px; font-weight: 600; line-height: 1.45; margin-top: 3px; color: var(--ink); }
+.fa-detail-note { margin-top: 14px; }
+.fa-detail-note-head { display: flex; align-items: center; gap: 6px; font-family: var(--font-serif); font-size: 13px; font-weight: 900; }
+.fa-detail-note p { font-size: 11px; line-height: 1.8; color: var(--ink-2); margin: 8px 0 0; }
+.fa-warn { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--orange-soft); color: #8a3a08; font-size: 10.5px; line-height: 1.6; }
+.fa-warn svg { flex-shrink: 0; margin-top: 2px; }
+.fa-detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.fa-detail-tags span { font-size: 9px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: var(--lime-soft); color: var(--forest); }
+
+/* 素材说明 */
+.fa-sources p { font-size: 11px; line-height: 1.8; color: var(--ink-2); margin: 0 0 10px; }
+.fa-sources b { color: var(--ink); }
+.fa-sources-rule { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--hair-2); }
+.fa-sources-rule > div { display: grid; grid-template-columns: 20px 1fr; gap: 2px 8px; align-items: start; }
+.fa-sources-rule svg { grid-row: span 2; margin-top: 2px; color: var(--forest); }
+.fa-sources-rule b { font-size: 11px; }
+.fa-sources-rule span { font-size: 10px; line-height: 1.6; color: var(--ink-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fa-rise { animation: none; }
+  .fa-card, .fa-back, .fa-info { transition: none; }
+}

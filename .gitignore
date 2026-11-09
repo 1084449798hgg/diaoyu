@@ -17,3 +17,6 @@ dist/
 .DS_Store
 Thumbs.db
 *.rdb
+
+# 鱼图素材中间产物（由 assets/build_fish_assets.py 生成）
+assets/fish-cutout/

@@ -4,6 +4,7 @@ import { useToast } from '../store.jsx';
 import { Sheet, Spinner } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
 import FishArt from '../components/fishArt.jsx';
+import { resolveFishImage } from '../fishAtlas.js';
 
 /**
  * 首页 v4：深墨绿 hero（品牌 / 四钓法 / 大评分 / 黄金段）
@@ -76,7 +77,7 @@ function lightPalette(species = '') {
   return { a: '#f1f0ea', b: '#dfddd2', ink: '#8c8778' };
 }
 
-export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning }) {
+export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning, onOpenAtlas }) {
   const showToast = useToast();
   const [spots, setSpots] = useState([]);
   const [speciesList, setSpeciesList] = useState([]);
@@ -259,7 +260,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
           <div className="hx-quick">
             <QuickBtn icon="camera" label="记渔获" dark onClick={onPublish} />
             <QuickBtn icon="water" label={method === 'sea' ? '潮汐表' : '江河水位'} onClick={() => setWaterSheet(true)} />
-            <QuickBtn icon="book" label="我的图鉴" onClick={onNavigateToProfile} />
+            <QuickBtn icon="book" label="我的图鉴" onClick={onOpenAtlas} />
             <QuickBtn icon="tank" label="赛博鱼缸" onClick={onNavigateToProfile} />
             <QuickBtn icon="filter" label="全部" onClick={onNavigateToCommunity} />
           </div>
@@ -273,6 +274,16 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
               <span className="rs-entry-sub">气象 → 地理 → 水域 · 三层可解释推理链</span>
             </span>
             <Icon name="right" size={18} className="rs-entry-arrow" />
+          </button>
+
+          {/* 鱼种图鉴 · 写实标本入口 */}
+          <button className="rs-entry-line" style={{ marginTop: 10, marginBottom: 0 }} onClick={() => onOpenAtlas && onOpenAtlas()}>
+            <span className="rs-el-ico"><Icon name="book" size={18} strokeWidth={1.7} /></span>
+            <div>
+              <b>鱼种图鉴 · 11 种写实标本</b>
+              <em>FISH ATLAS · ILLUSTRATED</em>
+            </div>
+            <Icon name="right" size={16} />
           </button>
 
           {/* 最新渔获 */}
@@ -310,18 +321,24 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
           {/* 本地热门鱼种 */}
           <div className="p-sec-head" style={{ marginTop: 20 }}>
             <div className="p-sec-title">本地热门鱼种 <em>杭州市</em></div>
-            <button className="p-more" onClick={onNavigateToProfile}>鱼种百科 <Icon name="right" size={11} /></button>
+            <button className="p-more" onClick={onOpenAtlas}>鱼种百科 <Icon name="right" size={11} /></button>
           </div>
           <div className="species-strip">
             {hotSpecies.map((s) => (
-              <button key={s.species} className="species-card" onClick={onNavigateToProfile}>
-                <div className="species-art" style={{ background: `linear-gradient(160deg, ${lightPalette(s.species).a}, ${lightPalette(s.species).b})` }}>
-                  <svg viewBox="0 0 120 58" width="100%" style={{ opacity: .92 }}>
-                    <path d="M22 30c16-15 36-18 51-12 5 2.4 10 5.6 13 9-3 3.4-8 6.6-13 9-15 6-35 3-51-12z" fill={lightPalette(s.species).ink} />
-                    <path d="M22 30 12 40 12 20z" fill={lightPalette(s.species).ink} />
-                    <circle cx="64" cy="26" r="2.1" fill="#fff" opacity=".9" />
-                    <path d="M40 21c6-3.4 13-4.4 19-3.4M40 39c6 3.4 13 4.4 19 3.4" stroke="#fff" strokeWidth="1.1" opacity=".45" fill="none" />
-                  </svg>
+              <button key={s.species} className="species-card" onClick={onOpenAtlas}>
+                <div className="species-art" style={{ background: resolveFishImage(s.species)
+                  ? 'linear-gradient(160deg, #1a3329, #0b1813)'
+                  : `linear-gradient(160deg, ${lightPalette(s.species).a}, ${lightPalette(s.species).b})` }}>
+                  {resolveFishImage(s.species) ? (
+                    <img className="species-photo" src={resolveFishImage(s.species)} alt={s.species} loading="lazy" />
+                  ) : (
+                    <svg viewBox="0 0 120 58" width="100%" style={{ opacity: .92 }}>
+                      <path d="M22 30c16-15 36-18 51-12 5 2.4 10 5.6 13 9-3 3.4-8 6.6-13 9-15 6-35 3-51-12z" fill={lightPalette(s.species).ink} />
+                      <path d="M22 30 12 40 12 20z" fill={lightPalette(s.species).ink} />
+                      <circle cx="64" cy="26" r="2.1" fill="#fff" opacity=".9" />
+                      <path d="M40 21c6-3.4 13-4.4 19-3.4M40 39c6 3.4 13 4.4 19 3.4" stroke="#fff" strokeWidth="1.1" opacity=".45" fill="none" />
+                    </svg>
+                  )}
                 </div>
                 <div className="species-name">{s.species}<em style={{ display: 'flex' }}><Icon name="right" size={11} strokeWidth={1.8} /></em></div>
               </button>
