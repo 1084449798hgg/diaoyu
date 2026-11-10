@@ -17,11 +17,14 @@ function SkyGlyph({ sky, size = 15 }) {
 }
 
 function biteText(score) {
-  if (score >= 82) return ['爆护', 'tag-green'];
-  if (score >= 68) return ['有口', 'tag-blue'];
-  if (score >= 52) return ['口慢', 'tag-amber'];
-  return ['无口', 'tag-red'];
+  if (score >= 82) return ['爆护', 'b-boom'];
+  if (score >= 68) return ['有口', 'b-good'];
+  if (score >= 52) return ['口慢', 'b-slow'];
+  return ['无口', 'b-none'];
 }
+
+/** 统一 1 位小数：避免 12 / 14.4、1007 / 1008.9 这类小数位参差破坏列对齐 */
+const f1 = (v) => (v == null || v === '' || Number.isNaN(Number(v)) ? '-' : Number(v).toFixed(1));
 
 function fmtDate(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
@@ -377,44 +380,50 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
             ))}
           </div>
 
-          {/* 逐小时表 */}
+          {/* 逐小时表：固定列宽 + 结构化鱼口单元格，消除孤立第二行与橙黄色块 */}
           <div className="p-sec-head">
             <div className="p-sec-title">逐小时鱼口 <em>HOURLY</em></div>
-            <span style={{ fontSize: 9, color: 'var(--ink-3)' }}>低 — 高</span>
+            <div className="hx-legend" aria-hidden="true"><span>低</span><i /><span>高</span></div>
           </div>
           <div className="hx-table-wrap">
-            <div style={{ overflowX: 'auto' }}>
-              <table className="hx-table">
-                <thead>
-                  <tr><th>时间</th><th>天气</th><th>气温</th><th>气压</th><th>风速</th><th>水温</th><th>水氧</th><th>指数</th></tr>
-                </thead>
-                <tbody>
-                  {hourly.map((h) => {
-                    const [bt] = biteText(h.score);
-                    return (
-                      <tr key={h.hour}>
-                        <td className="hm">{hh(h.hour)}</td>
-                        <td><SkyGlyph sky={h.skycon} size={14} /></td>
-                        <td>{h.temp}</td>
-                        <td>{h.pressure}</td>
-                        <td>{Math.round(h.windSpeed * 3.6)}</td>
-                        <td>{h.waterTemp}</td>
-                        <td>{h.dissolvedOxygen ?? '-'}</td>
-                        <td style={{ minWidth: 84 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <div className="hx-score-bar" style={{ flex: 1 }}>
-                              <i style={{ width: `${h.score}%`, background: h.score >= 82 ? 'var(--lime-deep)' : h.score >= 68 ? '#9fc36a' : h.score >= 52 ? '#e6c37a' : '#d8c2bb' }} />
-                            </div>
-                            <span style={{ fontFamily: 'var(--font-num)', fontSize: 10, width: 16, textAlign: 'right', color: 'var(--ink)', fontWeight: 700 }}>{h.score}</span>
-                          </div>
-                          <span style={{ fontSize: 7.5, color: 'var(--ink-3)' }}>{bt}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <table className="hx-table">
+              <colgroup>
+                <col style={{ width: '9%' }} /><col style={{ width: '8%' }} />
+                <col style={{ width: '12%' }} /><col style={{ width: '14%' }} />
+                <col style={{ width: '9%' }} /><col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} /><col style={{ width: '24%' }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>时间</th><th>天气</th><th>气温<em>℃</em></th><th>气压<em>hPa</em></th>
+                  <th>风速<em>km/h</em></th><th>水温<em>℃</em></th><th>水氧<em>mg/L</em></th><th>鱼口<em>SCORE</em></th>
+                </tr>
+              </thead>
+              <tbody>
+                {hourly.map((h) => {
+                  const [bt, btCls] = biteText(h.score);
+                  const isNow = date === todayStr(0) && h.hour === nowHour;
+                  return (
+                    <tr key={h.hour} className={isNow ? 'is-now' : ''}>
+                      <td className="hm">{hh(h.hour)}</td>
+                      <td className="sky"><SkyGlyph sky={h.skycon} size={14} /></td>
+                      <td className="num">{f1(h.temp)}</td>
+                      <td className="num">{Math.round(h.pressure)}</td>
+                      <td className="num">{Math.round(h.windSpeed * 3.6)}</td>
+                      <td className="num">{f1(h.waterTemp)}</td>
+                      <td className="num">{f1(h.dissolvedOxygen)}</td>
+                      <td className="score">
+                        <div className="hx-score-top">
+                          <span className={`hx-bite ${btCls}`}>{bt}</span>
+                          <b>{h.score}</b>
+                        </div>
+                        <div className="hx-score-bar"><i style={{ width: `${h.score}%` }} /></div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           {/* 曲线 */}

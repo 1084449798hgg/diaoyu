@@ -325,17 +325,43 @@ body {
 .wx-hourline { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--font-num); font-size: 8px; color: var(--ink-3); font-weight: 600; }
 
 /* 逐小时表（高级化） */
+/* 低—高 色阶图例：与进度条渐变同源 */
+.hx-legend { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--ink-2); font-weight: 600; }
+.hx-legend i { width: 30px; height: 4px; border-radius: 3px; background: linear-gradient(90deg, var(--lime-soft), var(--lime-deep)); }
+
 .hx-table-wrap { background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--hair); box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 12px; }
-.hx-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+/* 固定列宽：8 列不再被内容撑开，表头与数据严格垂直对齐，也不会触发横向滚动 */
+.hx-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10.5px; }
 .hx-table th {
-  font-size: 8.5px; font-weight: 700; letter-spacing: .08em; color: var(--ink-3); text-transform: uppercase;
-  padding: 11px 4px; border-bottom: 1px solid var(--hair); background: var(--surface-2); text-align: center;
+  font-size: 8.5px; font-weight: 700; letter-spacing: .06em; color: var(--ink-2); text-transform: uppercase;
+  padding: 9px 2px 7px; border-bottom: 1px solid var(--hair); background: var(--surface-2); text-align: center; line-height: 1.2;
 }
-.hx-table td { text-align: center; padding: 9px 4px; border-bottom: 1px solid #f2f4ee; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hx-table th em {
+  display: block; margin-top: 2px; font-style: normal; font-size: 7.5px; letter-spacing: 0;
+  text-transform: none; color: var(--ink-3); font-weight: 600;
+}
+.hx-table td { text-align: center; padding: 7px 2px; border-bottom: 1px solid #f2f4ee; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .hx-table tr:last-child td { border-bottom: none; }
-.hx-table td.hm { font-family: var(--font-num); font-weight: 800; color: var(--ink); font-size: 11.5px; }
-.hx-score-bar { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-.hx-score-bar i { display: block; height: 100%; border-radius: 3px; }
+.hx-table td.hm { font-family: var(--font-num); font-weight: 800; color: var(--ink); font-size: 11px; letter-spacing: -.02em; }
+.hx-table td.sky svg { display: block; margin: 0 auto; }
+.hx-table td.num { font-family: var(--font-num); font-size: 10.5px; letter-spacing: -.01em; white-space: nowrap; }
+/* 当前小时：淡柠檬绿底 + 左侧竖条，24 行里可快速定位 */
+.hx-table tr.is-now { background: rgba(216, 248, 79, .13); }
+.hx-table tr.is-now td.hm { color: var(--forest); }
+.hx-table tr.is-now td:first-child { box-shadow: inset 2px 0 0 var(--lime-deep); }
+
+/* 鱼口单元格：等级胶囊 + 分数同排，下方满宽渐变进度条。
+   每行结构完全一致，消除原先孤立下沉的 7.5px 灰色小字与橙黄色块 */
+.hx-table td.score { padding: 7px 6px; }
+.hx-score-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 5px; }
+.hx-score-top b { font-family: var(--font-num); font-size: 12px; font-weight: 800; color: var(--ink); letter-spacing: -.03em; line-height: 1; }
+.hx-bite { flex-shrink: 0; font-size: 8px; font-weight: 700; line-height: 1.2; padding: 2px 5px; border-radius: 5px; white-space: nowrap; }
+.hx-bite.b-boom { background: var(--lime); color: var(--forest); }
+.hx-bite.b-good { background: var(--lime-soft); color: #3c5a20; }
+.hx-bite.b-slow { background: var(--surface-2); color: var(--ink-2); }
+.hx-bite.b-none { background: var(--hair); color: var(--ink-2); }
+.hx-score-bar { height: 4px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.hx-score-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--lime-soft), var(--lime-deep)); }
 
 /* ===================== 钓友圈 ===================== */
 .cm-head { padding: 16px 0 2px; }
