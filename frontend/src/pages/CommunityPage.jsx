@@ -12,6 +12,10 @@ const FILTERS = [
   { key: '晒单', en: 'PHOTO' },
 ];
 
+// 双列瀑布流：错落的媒体高度（不依赖是否有实拍图），BODY_EST 为信息区估算高度
+const MEDIA_H = [140, 116, 152, 128, 146, 120, 150, 132];
+const BODY_EST = 112;
+
 const QUICK_ACTIONS = [
   { key: 'tank', icon: 'tank', label: '鱼缸', target: 'profile' },
   { key: 'wiki', icon: 'book', label: '百科' },
@@ -26,6 +30,13 @@ function timeAgo(iso) {
   if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))}分钟前`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
   return `${Math.floor(diff / 86400)}天前`;
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function CardMedia({ c, h, seed }) {
@@ -43,6 +54,7 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [panel, setPanel] = useState(null);
+  const [detail, setDetail] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,6 +86,21 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
     }
     return list;
   }, [items, tab]);
+
+  // 显式两列：按「媒体高度 + 信息区估算高度」贪心放入当前较矮的一列。
+  // 不再用 CSS columnCount —— 部分移动端浏览器（iOS Safari）对「多列 + 懒加载
+  // 图片 + break-inside:avoid」会算错分栏，把卡片信息区裁掉、右列留大片空白。
+  const columns = useMemo(() => {
+    const cols = [[], []];
+    const heights = [0, 0];
+    shown.forEach((c, idx) => {
+      const h = MEDIA_H[idx % MEDIA_H.length];
+      const k = heights[0] <= heights[1] ? 0 : 1;
+      cols[k].push({ c, idx, h });
+      heights[k] += h + BODY_EST + 10;
+    });
+    return cols;
+  }, [shown]);
 
   async function toggleLike(c) {
     if (!user) return;
@@ -166,65 +193,121 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
       {loading && <Spinner />}
       {!loading && shown.length === 0 && <Empty text="这个分类下还没有动态" icon="fish" />}
 
-      {/* 双列瀑布流 */}
+      {/* 双列瀑布流：显式 flex 两列 + 贪心配平 */}
       {!loading && shown.length > 0 && (
-        <div style={{ columnCount: 2, columnGap: 10 }}>
-          {shown.map((c, idx) => {
-            // 固定错落高度：不依赖是否有图，保证双列瀑布流有高低节奏
-            const h = [140, 116, 152, 128, 146, 120, 150, 132][idx % 8];
-            return (
-              <article key={c.id} className="cm-card">
-                <div className="cm-media">
-                  <CardMedia c={c} h={h} seed={idx} />
-                  <div className="cm-badges-l">
-                    <span className="cm-mini-fish"><Icon name="fish" size={12} strokeWidth={1.8} /></span>
-                    <span className="cm-count-l">×{c.fishCount || 1}</span>
-                  </div>
-                  <div className="cm-count-r"><Icon name="comment" size={9} strokeWidth={2} />{c.commentsCount ?? 0}</div>
-                  <div className="cm-media-foot">
-                    <div>
-                      <div className="cm-species">{c.fishSpecies || '渔获'}<em>{c.fishCount ? `×${c.fishCount}` : ''}</em></div>
-                      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                        <span className="cm-meta-chip">{methodLabel(c)}</span>
-                        {c.weightKg != null && <span className="cm-meta-chip">{c.weightKg}kg</span>}
+        <div className="cm-columns">
+          {columns.map((col, ci) => (
+            <div className="cm-col" key={ci}>
+              {col.map(({ c, idx, h }) => (
+                <article
+                  key={c.id}
+                  className="cm-card cm-card-tap"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`查看 ${c.fishSpecies || '渔获'} 的详细信息`}
+                  onClick={() => setDetail(c)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetail(c); } }}
+                >
+                  <div className="cm-media">
+                    <CardMedia c={c} h={h} seed={idx} />
+                    <div className="cm-badges-l">
+                      <span className="cm-mini-fish"><Icon name="fish" size={12} strokeWidth={1.8} /></span>
+                      <span className="cm-count-l">×{c.fishCount || 1}</span>
+                    </div>
+                    <div className="cm-count-r"><Icon name="comment" size={9} strokeWidth={2} />{c.commentsCount ?? 0}</div>
+                    <div className="cm-media-foot">
+                      <div>
+                        <div className="cm-species">{c.fishSpecies || '渔获'}<em>{c.fishCount ? `×${c.fishCount}` : ''}</em></div>
+                        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                          <span className="cm-meta-chip">{methodLabel(c)}</span>
+                          {c.weightKg != null && <span className="cm-meta-chip">{c.weightKg}kg</span>}
+                        </div>
+                      </div>
+                      <div className="cm-index">
+                        <b>{hotIndex(c)}</b>
+                        <span>热度</span>
                       </div>
                     </div>
-                    <div className="cm-index">
-                      <b>{hotIndex(c)}</b>
-                      <span>热度</span>
+                  </div>
+                  <div className="cm-body">
+                    <div className="cm-text">{c.content || `${c.spotName || '千岛湖'} · ${c.fishSpecies || '渔获'}上鱼记录`}</div>
+                    <div className="cm-foot">
+                      <span className="cm-ava">{(c.nickname || '钓')[0]}</span>
+                      <span className="cm-nick">{c.nickname || '钓友'}</span>
+                      <span className="cm-lv">LV.{Math.min(9, 2 + (c.likesCount || 0) % 6)}</span>
+                      <span className="cm-acts">
+                        <button className={`cm-act ${c.liked ? 'liked' : ''}`} onClick={(e) => { e.stopPropagation(); toggleLike(c); }}>
+                          <Icon name="heart" size={11} strokeWidth={2} fill={c.liked ? 'currentColor' : 'none'} />{c.likesCount}
+                        </button>
+                        <button className="cm-act" onClick={(e) => { e.stopPropagation(); openComments(c); }}>
+                          <Icon name="comment" size={11} strokeWidth={2} />{c.commentsCount}
+                        </button>
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 6, fontSize: 8.5, color: 'var(--ink-3)' }}>
+                      <Icon name="pin" size={9} strokeWidth={1.9} />
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.spotName || '杭州市'} · {timeAgo(c.createdAt)}</span>
+                      <button onClick={(e) => { e.stopPropagation(); report(c); }} style={{ color: 'var(--ink-3)', opacity: .6 }}>举报</button>
                     </div>
                   </div>
-                </div>
-                <div className="cm-body">
-                  <div className="cm-text">{c.content || `${c.spotName || '千岛湖'} · ${c.fishSpecies || '渔获'}上鱼记录`}</div>
-                  <div className="cm-foot">
-                    <span className="cm-ava">{(c.nickname || '钓')[0]}</span>
-                    <span className="cm-nick">{c.nickname || '钓友'}</span>
-                    <span className="cm-lv">LV.{Math.min(9, 2 + (c.likesCount || 0) % 6)}</span>
-                    <span className="cm-acts">
-                      <button className={`cm-act ${c.liked ? 'liked' : ''}`} onClick={() => toggleLike(c)}>
-                        <Icon name="heart" size={11} strokeWidth={2} fill={c.liked ? 'currentColor' : 'none'} />{c.likesCount}
-                      </button>
-                      <button className="cm-act" onClick={() => openComments(c)}>
-                        <Icon name="comment" size={11} strokeWidth={2} />{c.commentsCount}
-                      </button>
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 6, fontSize: 8.5, color: 'var(--ink-3)' }}>
-                    <Icon name="pin" size={9} strokeWidth={1.9} />
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.spotName || '杭州市'} · {timeAgo(c.createdAt)}</span>
-                    <button onClick={() => report(c)} style={{ color: 'var(--ink-3)', opacity: .6 }}>举报</button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              ))}
+            </div>
+          ))}
         </div>
       )}
 
       <p style={{ fontSize: 9.5, color: 'var(--ink-3)', textAlign: 'center', margin: '16px 0 4px' }}>
         共 {total} 条渔获 · 友善交流，理性晒图
       </p>
+
+      {/* 渔获详情：补齐卡片上省略的完整信息 */}
+      <Sheet open={!!detail} title={detail ? `${detail.fishSpecies} · 渔获详情` : ''} onClose={() => setDetail(null)}>
+        {detail && (
+          <div className="cm-detail">
+            <div className="cm-detail-stage">
+              <FishArt species={detail.fishSpecies} height={164} />
+              <div className="cm-detail-no">NO. {String(detail.id).padStart(3, '0')}</div>
+            </div>
+            <div className="cm-detail-head">
+              <b>{detail.fishSpecies}</b>
+              <span>{detail.weightKg != null ? `${detail.weightKg} kg` : '重量未记录'}</span>
+            </div>
+            <div className="cm-detail-grid">
+              {[
+                ['钓法', 'METHOD', methodLabel(detail), 'target'],
+                ['饵料', 'BAIT', detail.bait || '未记录', 'drop'],
+                ['钓点', 'SPOT', detail.spotName || '—', 'pin'],
+                ['时间', 'TIME', fmtTime(detail.createdAt), 'clock'],
+                ['钓友', 'ANGLER', detail.nickname || '钓友', 'user'],
+                ['钓获', 'CATCH', `${detail.fishCount || 1} 尾`, 'fish'],
+              ].map(([k, en, v, ico]) => (
+                <div className="cm-detail-cell" key={k}>
+                  <span className="cm-detail-ico"><Icon name={ico} size={14} /></span>
+                  <div><em>{en}</em><b>{k}</b><strong>{v}</strong></div>
+                </div>
+              ))}
+            </div>
+            <div className="cm-detail-note">
+              <div className="cm-detail-note-h"><Icon name="book" size={13} /> 钓获手记</div>
+              <p>{detail.content || '这条渔获还没有文字记录。'}</p>
+            </div>
+            <div className="cm-detail-stats">
+              <span><Icon name="heart" size={13} /> {detail.likesCount ?? 0} 赞</span>
+              <span><Icon name="comment" size={13} /> {detail.commentsCount ?? 0} 评论</span>
+              <span><Icon name="flame" size={13} /> 热度 {hotIndex(detail)}</span>
+            </div>
+            <div className="cm-detail-acts">
+              <button onClick={() => toggleLike(detail)}>
+                <Icon name="heart" size={14} fill={detail.liked ? 'currentColor' : 'none'} /> {detail.liked ? '已点赞' : '点赞'}
+              </button>
+              <button onClick={() => { setDetail(null); openComments(detail); }}>
+                <Icon name="comment" size={14} /> 查看评论
+              </button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       {/* 评论 */}
       <Sheet open={!!commenting} title={`评论 · ${commenting?.nickname || ''}`} onClose={() => setCommenting(null)}>
@@ -258,9 +341,13 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
   );
 }
 
+/** 钓法按饵料 / 鱼种推断，不再按「重量 > 2kg」误判成海钓 */
 function methodLabel(c) {
-  if (c.weightKg && c.weightKg > 2) return '海钓';
-  if (c.baitType === '假饵') return '路亚';
+  const bait = c.bait || '';
+  const sp = c.fishSpecies || '';
+  if (c.baitType === '假饵' || /亮片|米诺|软虫|假饵|VIB|铁板|铅笔/.test(bait)) return '路亚';
+  if (/海|鲳|鲑|石斑|鲷/.test(sp)) return '海钓';
+  if (/翘嘴|鲌|鲈|鳜|黑鱼|鳡/.test(sp) && /泥鳅|活饵|虾|亮片/.test(bait)) return '路亚';
   return '台钓';
 }
 

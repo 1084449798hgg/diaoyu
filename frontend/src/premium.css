@@ -378,6 +378,65 @@ body {
 .cm-act { display: inline-flex; align-items: center; gap: 3px; }
 .cm-act.liked { color: #e5484d; }
 
+/* ---- v9 钓友圈：显式双列 flex（弃用 CSS columnCount）----
+   iOS Safari 对「多列 + 懒加载图片 + break-inside:avoid」会算错分栏：
+   卡片信息区被裁掉、背景退化、右列留大片空白。改为 JS 贪心配平的两列。 */
+.cm-columns { display: flex; align-items: flex-start; gap: 10px; }
+.cm-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.cm-card-tap { cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
+.cm-card-tap:hover { box-shadow: 0 8px 22px rgba(13, 26, 21, .12); }
+.cm-card-tap:active { transform: scale(.985); }
+.cm-card-tap:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
+
+/* 底部压暗：银白鱼体上也读得清鱼种名；显式层级避免被鱼图盖住 */
+.cm-media .fish-art-fade { background: linear-gradient(to bottom, transparent 56%, rgba(6, 14, 12, .42) 100%); }
+.cm-media::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 56%; z-index: 1;
+  background: linear-gradient(to bottom, rgba(4, 14, 12, 0), rgba(4, 14, 12, .58));
+  pointer-events: none;
+}
+.cm-badges-l, .cm-count-r, .cm-media-foot { z-index: 2; }
+.cm-species { text-shadow: 0 2px 8px rgba(0, 0, 0, .72), 0 0 2px rgba(0, 0, 0, .55); }
+
+/* ---- 渔获详情 Sheet ---- */
+.cm-detail-stage { position: relative; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--hair); }
+.cm-detail-stage .fish-art { border-radius: 0; }
+.cm-detail-no {
+  position: absolute; left: 12px; top: 11px; z-index: 3;
+  font-family: var(--font-num); font-size: 9px; font-weight: 700; letter-spacing: .14em;
+  color: rgba(255, 255, 255, .72);
+}
+.cm-detail-head { display: flex; align-items: baseline; gap: 10px; margin: 16px 0 14px; }
+.cm-detail-head b { font-family: var(--font-serif); font-size: 23px; font-weight: 900; color: var(--ink); }
+.cm-detail-head span { font-family: var(--font-num); font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.cm-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cm-detail-cell { display: flex; align-items: center; gap: 9px; min-width: 0; background: var(--surface-2); border-radius: 12px; padding: 10px; }
+.cm-detail-ico {
+  width: 28px; height: 28px; border-radius: 9px; background: var(--surface); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--ink-2);
+}
+.cm-detail-cell em { display: block; font-style: normal; font-size: 7px; letter-spacing: .12em; color: var(--ink-3); font-weight: 700; }
+.cm-detail-cell b { display: block; font-size: 9px; color: var(--ink-3); font-weight: 600; margin-top: 1px; }
+.cm-detail-cell strong { display: block; font-size: 11px; font-weight: 700; color: var(--ink); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-detail-note { margin-top: 12px; background: var(--surface-2); border-radius: 14px; padding: 12px 14px; }
+.cm-detail-note-h { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--ink); }
+.cm-detail-note p { font-size: 12px; line-height: 1.8; color: var(--ink-2); margin: 8px 0 0; }
+.cm-detail-stats { display: flex; gap: 16px; margin: 14px 0 4px; font-size: 10.5px; font-weight: 700; color: var(--ink-2); }
+.cm-detail-stats span { display: inline-flex; align-items: center; gap: 5px; }
+.cm-detail-acts { display: flex; gap: 9px; margin-top: 12px; }
+.cm-detail-acts button {
+  flex: 1; height: 42px; border-radius: 12px; border: 1px solid var(--hair);
+  background: var(--surface); color: var(--ink); font-size: 11.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+}
+.cm-detail-acts button:first-child { background: var(--forest); border-color: var(--forest); color: #fff; }
+
+/* Sheet 打开时隐藏悬浮发布按钮：Sheet 渲染在 .page 内，其遮罩 z-index 被 .page 的
+   层叠上下文限制，盖不住 .phone-frame 直接子级的 fab(60)，否则「+」会穿透面板。
+   :has 由 Chromium / WebKit(Safari 15.4+) 支持，全局对所有页面的 Sheet 生效。 */
+.phone-frame:has(.sheet) .fab { opacity: 0; pointer-events: none; }
+.fab { transition: transform .12s, opacity .2s ease; }
+
 /* ===================== 我的 ===================== */
 .me-hero {
   margin: 0 -16px; padding: 16px 20px 56px; position: relative; overflow: hidden; color: #fff;
