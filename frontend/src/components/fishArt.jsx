@@ -51,7 +51,7 @@ export default function FishArt({ species, height = 140, seed = 0, children }) {
           alt={species ? `${species} 渔获` : '渔获'}
           loading="lazy"
           decoding="async"
-          style={{ transform: `translate(-50%, calc(-50% + ${bob}px))` }}
+          style={{ transform: `translate(-50%, calc(-50% + ${bob}px)) scaleX(${seed % 2 ? -1 : 1})` }}
         />
       ) : (
         <>

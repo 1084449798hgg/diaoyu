@@ -4,7 +4,8 @@ import { useToast } from '../store.jsx';
 import { Sheet, Spinner } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
 import FishArt from '../components/fishArt.jsx';
-import { resolveFishImage } from '../fishAtlas.js';
+import { resolveFishImage, FISH_ATLAS } from '../fishAtlas.js';
+import { goldenWindows } from '../utils/windows.js';
 
 /**
  * 首页 v4：深墨绿 hero（品牌 / 四钓法 / 大评分 / 黄金段）
@@ -44,37 +45,21 @@ function timeAgo(iso) {
 
 const hh = (h) => String(h).padStart(2, '0');
 
-function goldenSegments(hourly, threshold = 68, maxSegs = 3) {
-  if (!hourly?.length) return [];
-  const flagged = hourly.map((h) => ({ ...h, hot: h.score >= threshold }));
-  const segs = [];
-  let start = -1, lastHot = -1, gap = 0;
-  flagged.forEach((h, i) => {
-    if (h.hot) {
-      if (start < 0) start = i;
-      lastHot = i; gap = 0;
-    } else if (start >= 0) {
-      gap += 1;
-      if (gap > 1 || i === flagged.length - 1) {
-        segs.push({ startH: flagged[start].hour, endH: flagged[lastHot].hour + 1, avg: 0 });
-        start = -1;
-      }
-    }
-  });
-  if (start >= 0) segs.push({ startH: flagged[start].hour, endH: flagged[lastHot].hour + 1, avg: 0 });
-  segs.forEach((s) => {
-    const seg = hourly.filter((h) => h.hour >= s.startH && h.hour < s.endH);
-    s.avg = Math.round(seg.reduce((a, b) => a + b.score, 0) / Math.max(1, seg.length));
-  });
-  return segs.sort((a, b) => b.avg - a.avg).slice(0, maxSegs);
-}
-
-/** 鱼种卡浅色底 */
-function lightPalette(species = '') {
-  if (/鲤|鲫/.test(species)) return { a: '#f0f1e9', b: '#dde4d5', ink: '#8d9a83' };
-  if (/翘嘴|白条|鲌/.test(species)) return { a: '#edf1f2', b: '#d8e2e6', ink: '#7d959b' };
-  if (/草鱼|青鱼|鳊/.test(species)) return { a: '#eef2e7', b: '#d9e4cd', ink: '#7f9169' };
-  return { a: '#f1f0ea', b: '#dfddd2', ink: '#8c8778' };
+/**
+ * 首页图片去重：同一屏里同一张写实标本只出现一次。
+ * 以「最终会用到的图片」为键去重，避免「翘嘴 / 翘嘴鲌」这类别名落到同一张图上。
+ */
+function dedupeByImage(list = [], limit = 4) {
+  const seen = new Set();
+  const out = [];
+  for (const item of list) {
+    const key = resolveFishImage(item.fishSpecies) || item.fishSpecies || '未知';
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning, onOpenAtlas }) {
@@ -153,7 +138,8 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
   const wDelta = cur && hourly[Math.max(0, nowHour - 3)]
     ? Math.round((cur.waterTemp - hourly[Math.max(0, nowHour - 3)].waterTemp) * 10) / 10 : 0;
   const score = Math.round(bw?.avgScore ?? topHour.score ?? 0);
-  const segments = useMemo(() => goldenSegments(hourly), [hourly]);
+  const segments = useMemo(() => goldenWindows(hourly), [hourly]);
+  const shownCatches = useMemo(() => dedupeByImage(catches, 4), [catches]);
 
   const nearby = useMemo(() => {
     const list = [...spots];
@@ -163,13 +149,17 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
     return list.filter((s) => s.distance != null).sort((a, b) => a.distance - b.distance).slice(0, 4);
   }, [spots, method]);
 
+  /** 本地热门鱼种：避开渔获卡已用过的标本图，优先展示已有写实图的常见淡水鱼 */
   const hotSpecies = useMemo(() => {
-    const list = speciesList.filter((s) => s.category === 'freshwater');
-    const order = ['鲫鱼', '翘嘴', '白条', '鲤鱼', '草鱼', '鳊鱼'];
-    const picked = order.map((n) => list.find((s) => s.species === n)).filter(Boolean);
-    const rest = list.filter((s) => !picked.includes(s));
-    return [...picked, ...rest].slice(0, 3);
-  }, [speciesList]);
+    const used = new Set(shownCatches.map((c) => resolveFishImage(c.fishSpecies)).filter(Boolean));
+    const common = ['鳙鱼', '草鱼', '鳊鱼', '乌鳢', '黄颡鱼', '鲶鱼', '鲫鱼', '翘嘴鲌'];
+    const pool = FISH_ATLAS.filter((f) => f.group === 'freshwater' && f.img && !used.has(f.img));
+    pool.sort((a, b) => {
+      const ai = common.indexOf(a.name), bi = common.indexOf(b.name);
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    });
+    return pool.slice(0, 3).map((f) => ({ species: f.name, img: f.img }));
+  }, [shownCatches]);
 
   const rating = (r) => (r === 1 ? '5.0' : r === 2 ? '4.8' : '4.5');
 
@@ -292,7 +282,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
             <button className="p-more" onClick={onNavigateToCommunity}>更多渔获 <Icon name="right" size={11} /></button>
           </div>
           <div className="catch-grid">
-            {catches.slice(0, 4).map((c, idx) => (
+            {shownCatches.map((c, idx) => (
               <article key={c.id} className="catch-card" onClick={onNavigateToCommunity}>
                 <FishArt species={c.fishSpecies} height={126} seed={idx}>
                   <div className="catch-user">
@@ -326,18 +316,18 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
           <div className="species-strip">
             {hotSpecies.map((s) => (
               <button key={s.species} className="species-card" onClick={onOpenAtlas}>
-                <div className="species-art" style={{ background: resolveFishImage(s.species)
-                  ? 'linear-gradient(160deg, #1a3329, #0b1813)'
-                  : `linear-gradient(160deg, ${lightPalette(s.species).a}, ${lightPalette(s.species).b})` }}>
-                  {resolveFishImage(s.species) ? (
-                    <img className="species-photo" src={resolveFishImage(s.species)} alt={s.species} loading="lazy" />
+                <div className="species-art" style={{ background: 'linear-gradient(160deg, #1a3329, #0b1813)' }}>
+                  {(s.img || resolveFishImage(s.species)) ? (
+                    <img className="species-photo" src={s.img || resolveFishImage(s.species)} alt={s.species} loading="lazy" />
                   ) : (
-                    <svg viewBox="0 0 120 58" width="100%" style={{ opacity: .92 }}>
-                      <path d="M22 30c16-15 36-18 51-12 5 2.4 10 5.6 13 9-3 3.4-8 6.6-13 9-15 6-35 3-51-12z" fill={lightPalette(s.species).ink} />
-                      <path d="M22 30 12 40 12 20z" fill={lightPalette(s.species).ink} />
-                      <circle cx="64" cy="26" r="2.1" fill="#fff" opacity=".9" />
-                      <path d="M40 21c6-3.4 13-4.4 19-3.4M40 39c6 3.4 13 4.4 19 3.4" stroke="#fff" strokeWidth="1.1" opacity=".45" fill="none" />
-                    </svg>
+                    <>
+                      <svg className="species-pending-art" viewBox="0 0 120 58" width="82%" aria-hidden="true">
+                        <path d="M22 30c16-15 36-18 51-12 5 2.4 10 5.6 13 9-3 3.4-8 6.6-13 9-15 6-35 3-51-12z" fill="rgba(255,255,255,.34)" />
+                        <path d="M22 30 12 40 12 20z" fill="rgba(255,255,255,.34)" />
+                        <circle cx="64" cy="26" r="2.1" fill="#fff" opacity=".5" />
+                      </svg>
+                      <span className="species-pending">SPECIMEN PENDING</span>
+                    </>
                   )}
                 </div>
                 <div className="species-name">{s.species}<em style={{ display: 'flex' }}><Icon name="right" size={11} strokeWidth={1.8} /></em></div>

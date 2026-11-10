@@ -264,13 +264,21 @@ body {
 .wx-title em { font-style: normal; font-family: var(--font-sans); font-size: 8px; letter-spacing: .2em; color: var(--ink-3); font-weight: 700; }
 .wx-locline { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--ink-3); }
 .wx-refresh { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--ink-2); }
+/* 黄金窗口提示：改用品牌墨绿 + 柠檬绿，不再出现孤立的橙红大色块 */
 .wx-alert {
-  display: flex; align-items: center; gap: 10px; padding: 13px 15px; border-radius: var(--r-md);
-  background: linear-gradient(100deg, #ff7a2f, #ff6312); color: #fff; margin: 14px 0 12px;
-  box-shadow: 0 8px 22px rgba(255, 106, 24, .22);
+  display: flex; align-items: center; gap: 11px; padding: 13px 15px; border-radius: var(--r-md);
+  background: linear-gradient(100deg, #16291f, #0d1a15); color: #fff; margin: 14px 0 12px;
+  box-shadow: 0 8px 22px rgba(13, 26, 21, .18);
 }
+.wx-alert-ico {
+  width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--lime); color: var(--forest);
+}
+.wx-alert > svg { color: var(--lime); flex-shrink: 0; }
 .wx-alert b { font-size: 12.5px; display: block; letter-spacing: .02em; }
-.wx-alert span { font-size: 10px; opacity: .85; display: block; margin-top: 2px; }
+.wx-alert div > span { font-size: 10px; opacity: .82; display: block; margin-top: 2px; }
+.wx-alert:active { transform: scale(.99); }
 .wx-hero-card { background: var(--surface); border-radius: var(--r-xl); border: 1px solid var(--hair); box-shadow: var(--shadow-card); padding: 20px 18px 16px; margin-bottom: 12px; }
 .wx-main { display: flex; align-items: flex-start; justify-content: space-between; }
 .wx-temp { font-family: var(--font-num); font-size: 74px; font-weight: 800; letter-spacing: -.07em; line-height: .82; }
@@ -329,7 +337,9 @@ body {
 
 .cm-card { background: var(--surface); border-radius: var(--r-md); border: 1px solid var(--hair); overflow: hidden; box-shadow: 0 2px 10px rgba(13,26,21,.035); break-inside: avoid; margin-bottom: 10px; }
 .cm-media { position: relative; overflow: hidden; background: var(--surface-2); }
-.cm-media img { width: 100%; display: block; object-fit: cover; }
+/* 仅作用于直接的用户上传图；写实标本图在 .fish-art 内，需保留 object-fit: contain，
+   否则宽幅素材（草鱼 1200×422 等）会被 cover 放大裁掉头尾 */
+.cm-media > img { width: 100%; display: block; object-fit: cover; }
 .cm-badges-l { position: absolute; left: 7px; top: 7px; display: flex; align-items: center; }
 .cm-mini-fish { width: 22px; height: 22px; border-radius: 7px; background: rgba(255,255,255,.94); border: 1.5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-left: -5px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 .cm-mini-fish:first-child { margin-left: 0; }
@@ -1005,6 +1015,13 @@ body {
 
 /* ---- 首页本地热门鱼种：有写实图时用深底突出银白鱼体 ---- */
 .species-photo { width: 100%; height: 100%; object-fit: contain; padding: 6px 4px; filter: drop-shadow(0 5px 7px rgba(0, 0, 0, .3)); }
+/* 暂无写实标本的鱼种：与渔获卡统一的深色「标本待补」占位，不再出现浅绿剪影 */
+.species-pending-art { opacity: .5; }
+.species-pending {
+  position: absolute; right: 6px; top: 6px; z-index: 2;
+  font-size: 6px; letter-spacing: .14em; font-weight: 700;
+  color: rgba(255, 255, 255, .45);
+}
 
 /* ---- 鱼种图鉴页 ---- */
 .fa-page { padding-bottom: 40px; }

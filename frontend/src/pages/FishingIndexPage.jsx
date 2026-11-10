@@ -4,6 +4,7 @@ import { useAuth, useToast } from '../store.jsx';
 import { Spinner, Sheet, Segmented } from '../components/ui.jsx';
 import { PressureChart, ProbabilityChart } from '../components/Charts.jsx';
 import Icon from '../components/icons.jsx';
+import { upcomingWindow } from '../utils/windows.js';
 
 /* 天空状况 → 统一线性图标（零 emoji，图标语义与全套一致） */
 const SKY_ICON = {
@@ -109,29 +110,6 @@ function CloudArt({ sky = '阴' }) {
 }
 
 
-/** 从当前小时起，找最近一个未结束的高分段（≥68） */
-function upcomingWindow(hourly, nowH) {
-  if (!hourly?.length) return null;
-  const segs = [];
-  let start = -1;
-  for (let i = 0; i < hourly.length; i++) {
-    const hot = hourly[i].score >= 68;
-    if (hot && start < 0) start = i;
-    const isLast = i === hourly.length - 1;
-    if (start >= 0 && (!hot || isLast)) {
-      const endIdx = hot && isLast ? i : i - 1;
-      const slice = hourly.slice(start, endIdx + 1);
-      segs.push({
-        startH: hourly[start].hour,
-        endH: hourly[endIdx].hour + 1,
-        avg: Math.round(slice.reduce((a, b) => a + b.score, 0) / Math.max(1, slice.length)),
-      });
-      start = -1;
-    }
-  }
-  return segs.find((s) => s.endH > nowH) || segs[0] || null;
-}
-
 export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
   const showToast = useToast();
   const { user } = useAuth();
@@ -180,6 +158,7 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
   const score = Math.round(forecast?.bestWindow?.avgScore ?? 0);
   const [bite] = biteText(score);
   const nextWin = upcomingWindow(hourly, nowHour);
+  const inWindow = !!(nextWin && nowHour >= nextWin.startH && nowHour < nextWin.endH);
 
   async function toggleCompare(name) {
     const next = compareSpecies.includes(name)
@@ -229,11 +208,11 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
         <Icon name="right" size={15} />
       </button>
 
-      {/* 橙色提示：最佳窗口 */}
-      <button className="wx-alert" style={{ width: '100%', textAlign: 'left' }} onClick={() => showToast(`黄金时段 ${forecast?.bestWindow ? `${hh(forecast.bestWindow.start)}:00-${hh(forecast.bestWindow.end)}:00` : '-'}，建议提前打窝`, 'info')}>
-        <Icon name="flame" size={20} />
+      {/* 黄金窗口提示：墨绿 + 柠檬绿，纳入全站设计系统 */}
+      <button className="wx-alert" style={{ width: '100%', textAlign: 'left' }} onClick={() => showToast(nextWin ? `黄金时段 ${hh(nextWin.startH)}:00–${hh(nextWin.endH)}:00，均分 ${nextWin.avg}，建议提前打窝` : '正在计算逐小时鱼口…', 'info')}>
+        <span className="wx-alert-ico"><Icon name="flame" size={18} strokeWidth={1.8} /></span>
         <div style={{ flex: 1 }}>
-          <b>{nextWin && nextWin.startH <= nowHour ? '当前正是黄金窗口' : '今天的最佳出竿窗口'}</b>
+          <b>{inWindow ? '当前正是黄金窗口' : '今天的最佳出竿窗口'}</b>
           <span>{nextWin ? `${hh(nextWin.startH)}:00 – ${hh(nextWin.endH)}:00 · 均分 ${nextWin.avg}` : '正在计算逐小时鱼口…'}</span>
         </div>
         <Icon name="right" size={16} />
@@ -321,7 +300,7 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
                 </div>
               </div>
               <div className="wx-bite-right">
-                <div className="wx-bite-next">下一个黄金时段</div>
+                <div className="wx-bite-next">{inWindow ? '当前黄金窗口' : '下一个黄金时段'}</div>
                 <div className="wx-window">
                   {nextWin ? `${hh(nextWin.startH)}:00–${hh(nextWin.endH)}:00` : '--'}
                   <small>/ 均分 {nextWin?.avg ?? '--'}</small>
@@ -444,7 +423,7 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
               <div className="p-sec-title" style={{ fontSize: 15 }}>开口概率 <em>PROBABILITY</em></div>
               <span style={{ fontSize: 9, color: 'var(--ink-3)' }}>高亮为黄金段</span>
             </div>
-            <ProbabilityChart hourly={hourly} bestWindow={forecast.bestWindow} />
+            <ProbabilityChart hourly={hourly} bestWindow={nextWin ? { start: nextWin.startH, end: nextWin.endH - 1 } : null} />
           </div>
 
           {forecast.pressureTrend?.length > 0 && (
@@ -509,8 +488,8 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
             <div className="p-divider" />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                ['黄金鱼段', forecast.bestWindow ? `${forecast.bestWindow.start}:00–${forecast.bestWindow.end}:00` : '-'],
-                ['窗口均分', forecast.bestWindow?.avgScore ?? '-'],
+                ['黄金鱼段', nextWin ? `${hh(nextWin.startH)}:00–${hh(nextWin.endH)}:00` : '-'],
+                ['窗口均分', nextWin?.avg ?? '-'],
                 ['适宜水温', sp ? `${sp.waterTempMin}-${sp.waterTempMax}℃` : '-'],
                 ['月相', forecast.weatherMeta?.moonPhaseName || '-'],
               ].map(([k, v]) => (
