@@ -21,11 +21,18 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('home');
+  // 已访问过的 Tab 保持挂载（CSS 隐藏而非卸载），切回时状态与滚动位置不丢
+  const [visited, setVisited] = useState(['home']);
   const [publishing, setPublishing] = useState(false);
   const [reasoning, setReasoning] = useState(false);
   const [atlas, setAtlas] = useState(false);
   const [communityFilter, setCommunityFilter] = useState(null);
   const { user } = useAuth();
+
+  const goTab = (key) => {
+    setTab(key);
+    setVisited((v) => (v.includes(key) ? v : [...v, key]));
+  };
 
   if (!user) {
     return (
@@ -35,76 +42,71 @@ export default function App() {
     );
   }
 
-  if (publishing) {
-    return (
-      <div className="phone-frame">
-        <PublishPage
-          onClose={() => setPublishing(false)}
-          onPublished={() => {
-            setPublishing(false);
-            setTab('community');
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (reasoning) {
-    return (
-      <div className="phone-frame">
-        <ReasoningPage onClose={() => setReasoning(false)} />
-      </div>
-    );
-  }
-
-  if (atlas) {
-    return (
-      <div className="phone-frame">
-        <FishAtlasPage onClose={() => setAtlas(false)} />
-      </div>
-    );
-  }
-
   const goMap = (spot) => {
     setCommunityFilter(null);
-    setTab('map');
-    if (spot) window.__pendingSpotFocus = spot;
+    goTab('map');
+    if (spot) {
+      // 兼容首次挂载；已挂载时通过事件触发聚焦
+      window.__pendingSpotFocus = spot;
+      window.dispatchEvent(new CustomEvent('app:focusSpot', { detail: spot }));
+    }
   };
+
+  const pane = (key) => {
+    switch (key) {
+      case 'home':
+        return (
+          <HomePage
+            onNavigateToMap={goMap}
+            onNavigateToCommunity={() => { setCommunityFilter(null); goTab('community'); }}
+            onNavigateToProfile={() => goTab('profile')}
+            onPublish={() => setPublishing(true)}
+            onOpenReasoning={() => setReasoning(true)}
+            onOpenAtlas={() => setAtlas(true)}
+          />
+        );
+      case 'weather':
+        return <FishingIndexPage onNavigateToMap={() => goMap()} onOpenReasoning={() => setReasoning(true)} />;
+      case 'community':
+        return (
+          <CommunityPage
+            filter={communityFilter}
+            onClearFilter={() => setCommunityFilter(null)}
+            onPublish={() => setPublishing(true)}
+            onNavigateToMap={() => goMap()}
+            onNavigateToProfile={() => goTab('profile')}
+          />
+        );
+      case 'map':
+        return (
+          <MapPage
+            onNavigateToCommunity={(spot) => {
+              setCommunityFilter(spot);
+              goTab('community');
+            }}
+          />
+        );
+      case 'profile':
+        return <ProfilePage onPublish={() => setPublishing(true)} />;
+      default:
+        return null;
+    }
+  };
+
+  const overlayOpen = publishing || reasoning || atlas;
 
   return (
     <div className="phone-frame">
-      {tab === 'home' && (
-        <HomePage
-          onNavigateToMap={goMap}
-          onNavigateToCommunity={() => { setCommunityFilter(null); setTab('community'); }}
-          onNavigateToProfile={() => setTab('profile')}
-          onPublish={() => setPublishing(true)}
-          onOpenReasoning={() => setReasoning(true)}
-          onOpenAtlas={() => setAtlas(true)}
-        />
-      )}
-      {tab === 'weather' && <FishingIndexPage onNavigateToMap={() => goMap()} onOpenReasoning={() => setReasoning(true)} />}
-      {tab === 'community' && (
-        <CommunityPage
-          filter={communityFilter}
-          onClearFilter={() => setCommunityFilter(null)}
-          onPublish={() => setPublishing(true)}
-          onNavigateToMap={() => goMap()}
-          onNavigateToProfile={() => setTab('profile')}
-        />
-      )}
-      {tab === 'map' && (
-        <MapPage
-          onNavigateToCommunity={(spot) => {
-            setCommunityFilter(spot);
-            setTab('community');
-          }}
-        />
-      )}
-      {tab === 'profile' && <ProfilePage onPublish={() => setPublishing(true)} />}
+      {/* 已访问的 Tab 常驻：display:contents 让页面直接参与 phone-frame 的 flex 布局，
+          非激活项 display:none 但 DOM 保留，钓法/鱼种/筛选/滚动位置全部不丢 */}
+      {TABS.filter((t) => visited.includes(t.key)).map((t) => (
+        <div key={t.key} className={`app-pane ${tab === t.key ? '' : 'is-hidden'}`} aria-hidden={tab !== t.key}>
+          {pane(t.key)}
+        </div>
+      ))}
 
       {/* 悬浮发布 */}
-      {tab === 'community' && (
+      {tab === 'community' && !overlayOpen && (
         <button className="fab" onClick={() => setPublishing(true)} aria-label="晒鱼获">
           <Icon name="plus" size={24} strokeWidth={2.4} />
         </button>
@@ -115,7 +117,7 @@ export default function App() {
           <button
             key={t.key}
             className={`tabbar-item ${tab === t.key ? 'active' : ''}`}
-            onClick={() => setTab(t.key)}
+            onClick={() => goTab(t.key)}
             aria-label={t.label}
             aria-current={tab === t.key ? 'page' : undefined}
           >
@@ -124,6 +126,26 @@ export default function App() {
           </button>
         ))}
       </nav>
+
+      {/* 全屏页用叠加层覆盖，底层 5 个 Tab 不卸载，返回后状态完整 */}
+      {publishing && (
+        <div className="app-layer">
+          <PublishPage
+            onClose={() => setPublishing(false)}
+            onPublished={() => { setPublishing(false); goTab('community'); }}
+          />
+        </div>
+      )}
+      {reasoning && (
+        <div className="app-layer">
+          <ReasoningPage onClose={() => setReasoning(false)} />
+        </div>
+      )}
+      {atlas && (
+        <div className="app-layer">
+          <FishAtlasPage onClose={() => setAtlas(false)} />
+        </div>
+      )}
     </div>
   );
 }

@@ -61,9 +61,17 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
 
   const shown = useMemo(() => {
     let list = [...items];
-    if (tab === '最新') list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    if (tab === '热门') list.sort((a, b) => b.likesCount - a.likesCount);
-    if (tab === '晒单') list = list.filter((c) => (c.imageUrls || []).length > 0);
+    // 综合热度：点赞 + 评论 + 重量，用于「推荐」的个性化排序
+    const hot = (c) => (c.likesCount || 0) * 2 + (c.commentsCount || 0) * 3 + (c.weightKg || 0) * 3;
+    const byTime = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
+    if (tab === '推荐') list.sort((a, b) => hot(b) - hot(a) || byTime(a, b));
+    if (tab === '最新') list.sort(byTime);
+    if (tab === '热门') list.sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0) || byTime(a, b));
+    if (tab === '晒单') {
+      // 只显示带图的动态；演示数据里部分动态无实拍图，因此筛选真实生效
+      list = list.filter((c) => (c.imageUrls || []).length > 0);
+      list.sort((a, b) => (b.commentsCount || 0) - (a.commentsCount || 0) || byTime(a, b));
+    }
     return list;
   }, [items, tab]);
 
@@ -162,7 +170,8 @@ export default function CommunityPage({ filter, onClearFilter, onPublish, onNavi
       {!loading && shown.length > 0 && (
         <div style={{ columnCount: 2, columnGap: 10 }}>
           {shown.map((c, idx) => {
-            const h = c.imageUrls?.[0] ? 140 : idx % 3 === 1 ? 116 : 150;
+            // 固定错落高度：不依赖是否有图，保证双列瀑布流有高低节奏
+            const h = [140, 116, 152, 128, 146, 120, 150, 132][idx % 8];
             return (
               <article key={c.id} className="cm-card">
                 <div className="cm-media">

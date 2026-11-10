@@ -54,10 +54,10 @@ INSERT INTO catches (user_id, spot_id, fish_species, weight_kg, bait, content, i
 (1, 1, '鲫鱼', 0.45, '蚯蚓+酒米', '今早中心湖区连杆了，6点到9点黄金窗口没话说！', '["/uploads/seed/catch-1.svg"]', 'public', 1, 12, 2, NOW() - INTERVAL 6 HOUR),
 (3, 2, '翘嘴', 2.10, '亮片', '芦苇荡边亮片收虾皮，来了一尾不小的翘嘴。', '["/uploads/seed/catch-2.svg"]', 'public', 1, 8, 1, NOW() - INTERVAL 1 DAY),
 (2, 3, '鲤鱼', 1.65, '老坛玉米', '大桥下夜钓，玉米守来一尾三斤多的鲤鱼。', '["/uploads/seed/catch-3.svg"]', 'public', 1, 15, 3, NOW() - INTERVAL 2 DAY),
-(1, 6, '翘嘴', 1.20, '泥鳅', '入湖口潮汐变化时下竿，接口漂亮。', '["/uploads/seed/catch-4.svg"]', 'public', 1, 6, 0, NOW() - INTERVAL 3 DAY),
+(1, 6, '翘嘴', 1.20, '泥鳅', '入湖口潮汐变化时下竿，接口漂亮。', '[]', 'public', 1, 6, 0, NOW() - INTERVAL 3 DAY),
 (2, 7, '草鱼', 3.80, '嫩玉米', '渔庄黑坑偷驴，嫩玉米中草一尾。', '["/uploads/seed/catch-1.svg"]', 'public', 1, 9, 1, NOW() - INTERVAL 4 DAY),
 (1, 5, '鲤鱼', 1.10, '发酵玉米', '里湖乡畔浅滩，升温后鲤鱼靠边。', '["/uploads/seed/catch-2.svg"]', 'public', 1, 5, 0, NOW() - INTERVAL 5 DAY),
-(3, 9, '草鱼', 2.90, '蚂蚱', '急流段蚂蚱流水钓，意外之喜。', '["/uploads/seed/catch-3.svg"]', 'public', 1, 4, 1, NOW() - INTERVAL 6 DAY),
+(3, 9, '草鱼', 2.90, '蚂蚱', '急流段蚂蚱流水钓，意外之喜。', '[]', 'public', 1, 4, 1, NOW() - INTERVAL 6 DAY),
 (2, 4, '鲫鱼', 0.35, '红虫', '河湾小雨天，红虫拉饵小鲫连口。', '["/uploads/seed/catch-4.svg"]', 'public', 1, 3, 0, NOW() - INTERVAL 7 DAY);
 
 INSERT INTO comments (catch_id, user_id, content, created_at) VALUES

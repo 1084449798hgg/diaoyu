@@ -46,6 +46,22 @@ body {
   background-size: 3px 3px;
 }
 
+/* ---- Tab 保活容器 ----
+   显示时用 display:contents，让内部 .page 仍是 .phone-frame 的直接 flex 子项，
+   原有版式（flex:1 / 滚动 / 底部留白）完全不变；隐藏项用 display:none 保留 DOM，
+   组件状态、鱼种/钓法选择、筛选与 scrollTop 均不丢失。 */
+.app-pane { display: contents; }
+.app-pane.is-hidden { display: none; }
+
+/* 全屏页叠加层：盖住 TabBar，但底层 Tab 不卸载 */
+.app-layer {
+  position: absolute; inset: 0; z-index: 60;
+  display: flex; flex-direction: column;
+  background: var(--paper, #f0f1ec);
+  animation: page-fade .28s ease both;
+}
+.app-layer > .page { flex: 1; min-height: 0; }
+
 .page {
   --text: var(--ink);
   --text-2: var(--ink-2);

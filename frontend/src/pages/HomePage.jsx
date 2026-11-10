@@ -15,7 +15,7 @@ import { goldenWindows } from '../utils/windows.js';
 const METHODS = [
   { key: 'freshwater', label: '台钓', en: 'FLOAT', cat: 'freshwater', defaultSpecies: '鲫鱼' },
   { key: 'lure', label: '路亚', en: 'LURE', cat: 'freshwater', defaultSpecies: '翘嘴' },
-  { key: 'sea', label: '海钓', en: 'SEA', cat: 'sea', defaultSpecies: '鲈鱼' },
+  { key: 'sea', label: '海钓', en: 'SEA', cat: 'sea', defaultSpecies: '海鲈鱼' },
   { key: 'pond', label: '钓场', en: 'POND', cat: 'freshwater', defaultSpecies: '鲫鱼' },
 ];
 
@@ -202,7 +202,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
 
         <div className="hx-method">
           {METHODS.map((m) => (
-            <button key={m.key} className={`hx-method-item ${method === m.key ? 'active' : ''}`} onClick={() => setMethod(m.key)}>
+            <button key={m.key} className={`hx-method-item ${method === m.key ? 'active' : ''}`} onClick={() => { setMethod(m.key); setSpecies(m.defaultSpecies); }}>
               <span className="m-cn">{m.label}</span>
               <span className="m-en">{m.en}</span>
               {method === m.key && <i />}
@@ -270,7 +270,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
           <button className="rs-entry-line" style={{ marginTop: 10, marginBottom: 0 }} onClick={() => onOpenAtlas && onOpenAtlas()}>
             <span className="rs-el-ico"><Icon name="book" size={18} strokeWidth={1.7} /></span>
             <div>
-              <b>鱼种图鉴 · 11 种写实标本</b>
+              <b>鱼种图鉴 · {FISH_ATLAS.length} 种写实标本</b>
               <em>FISH ATLAS · ILLUSTRATED</em>
             </div>
             <Icon name="right" size={16} />

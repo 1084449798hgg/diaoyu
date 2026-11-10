@@ -16,6 +16,16 @@ export const FISH_ATLAS = [
     match: ['鲫鱼', '土鲫', '河鲫', '喜头', '鲫'],
   },
   {
+    id: 'common_carp', name: '鲤鱼', en: 'COMMON CARP', latin: 'Cyprinus carpio',
+    alias: '鲤拐子 · 河鲤 · 黄河鲤', group: 'freshwater',
+    temp: '15–28℃', layer: '底层', diet: '杂食 · 底栖动物 / 水草 / 谷物',
+    habitat: '池塘 · 湖泊缓流 · 江河回水湾', method: '底钓 · 玉米 · 薯饵 · 商品窝料',
+    tags: ['底层', '拱食', '广温'],
+    note: '口部有两对须、体侧鳞片大而齐，底层拱泥觅食，警觉性高。春秋水温 15–28℃ 摄食最旺，用发酵玉米或薯味饵重窝守钓，漂相多为稳送漂与黑漂。',
+    img: '/fish/common_carp.webp',
+    match: ['鲤鱼', '鲤拐子', '河鲤', '黄河鲤', '鲤'],
+  },
+  {
     id: 'grass_carp', name: '草鱼', en: 'GRASS CARP', latin: 'Ctenopharyngodon idella',
     alias: '鲩鱼 · 草鲩 · 白鲩', group: 'freshwater',
     temp: '20–30℃', layer: '中下层', diet: '草食 · 水草 / 陆草',

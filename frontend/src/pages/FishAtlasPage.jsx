@@ -65,7 +65,7 @@ export default function FishAtlasPage({ onClose }) {
         <div className="fa-hero-grid" />
         <div className="fa-hero-eyebrow"><Icon name="book" size={12} /> FIELD GUIDE · VOL. 01</div>
         <h1 className="fa-hero-title">见鱼，<br />知其性。</h1>
-        <div className="fa-hero-sub">十一种淡水与洄游鱼类的形态标本<br />从适温、水层到钓法，一眼看懂</div>
+        <div className="fa-hero-sub">淡水与洄游鱼类的形态标本<br />从适温、水层到钓法，一眼看懂</div>
         <div className="fa-hero-count"><b>{pad2(FISH_ATLAS.length)}</b><span>SPECIES<br />ILLUSTRATED</span></div>
         <img className="fa-hero-fish" src="/fish/sturgeon.webp" alt="鲟鱼标本" />
         <div className="fa-hero-watermark">ICHTHYOLOGY</div>

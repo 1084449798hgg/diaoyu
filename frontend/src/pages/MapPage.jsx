@@ -105,6 +105,19 @@ export default function MapPage({ onNavigateToCommunity }) {
     } catch { /* 详情失败不影响基础信息 */ }
   }, []);
 
+  // Tab 保活后地图可能已挂载，从其它页带钓点跳转时用事件触发聚焦
+  useEffect(() => {
+    const onFocus = (e) => {
+      const focus = e.detail;
+      if (!focus) return;
+      const s = spots.find((x) => x.id === focus.id) || focus;
+      if (s) openDetail(s);
+      window.__pendingSpotFocus = null;
+    };
+    window.addEventListener('app:focusSpot', onFocus);
+    return () => window.removeEventListener('app:focusSpot', onFocus);
+  }, [spots, openDetail]);
+
   const filtered = spots.filter((s) => (filter === '全部' || s.waterType === filter) && (!compliance || s.banned));
 
   function onPointerDown(e) {

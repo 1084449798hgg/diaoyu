@@ -27,7 +27,8 @@ function bodyShape(species = '') {
 export default function FishArt({ species, height = 140, seed = 0, children }) {
   const p = fishPalette(species);
   const { sx, sy } = bodyShape(species);
-  const bob = (seed % 3) * 6 - 6;
+  // 垂直浮动会让写实鱼图偏离中心；为保证水平/垂直严格居中，固定为 0
+  const bob = 0;
   const img = resolveFishImage(species);
 
   return (
