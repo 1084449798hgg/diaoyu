@@ -533,9 +533,15 @@ body {
 }
 .cm-detail-acts button:first-child { background: var(--forest); border-color: var(--forest); color: #fff; }
 
-/* Sheet 打开时隐藏悬浮发布按钮：Sheet 渲染在 .page 内，其遮罩 z-index 被 .page 的
-   层叠上下文限制，盖不住 .phone-frame 直接子级的 fab(60)，否则「+」会穿透面板。
+/* Sheet 弹窗吸底覆盖修正：
+   .page 带 position:relative + z-index:2，会形成层叠上下文，把 Sheet(95)/mask(90) 困在
+   其内部；而 TabBar(50)、fab(60) 是 .phone-frame 的直接子级。2 < 50 导致 TabBar 穿透
+   盖住弹窗底部、遮罩也压不住 TabBar（表现为「弹窗没有吸底覆盖」）。
+   弹窗打开时把所在的 .page 提升到 TabBar/fab 之上，遮罩与面板即可真正覆盖全屏并吸底。
    :has 由 Chromium / WebKit(Safari 15.4+) 支持，全局对所有页面的 Sheet 生效。 */
+.page:has(.sheet) { z-index: 100; }
+/* Sheet 打开时隐藏悬浮发布按钮：即便 page 已提到 z-index:100，隐藏 fab 仍更干净，
+   避免退出动画期间「+」从遮罩下闪出。 */
 .phone-frame:has(.sheet) .fab { opacity: 0; pointer-events: none; }
 .fab { transition: transform .12s, opacity .2s ease; }
 

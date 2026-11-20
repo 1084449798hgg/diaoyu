@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useDragControls } from 'framer-motion';
 import Icon from './icons.jsx';
 import { SPRING, ENABLE_MOTION, MOTION_VARIANTS } from '../motion/config.js';
@@ -118,8 +119,13 @@ export function Sheet({ open, title, onClose, children }) {
     </>
   );
 
-  if (!animate) return open ? body : null;
-  return <AnimatePresence>{open && body}</AnimatePresence>;
+  // Portal 到 .phone-frame：Sheet 若留在 .page 内，会因 .page 的 overflow 滚动而跟着滚走
+  // （长页面滚动后打开弹窗，面板被推到视口外），且被 .page 的层叠上下文困住盖不住 TabBar。
+  // 挂到手机框后：position:absolute 相对 .phone-frame 定位 —— 始终吸底、覆盖 TabBar、不受内容滚动影响。
+  // 手机框在桌面预览时居中显示，弹窗也随之贴合手机框底部（用 fixed 会错误地贴到整个窗口底部）。
+  const host = (typeof document !== 'undefined' && document.querySelector('.phone-frame')) || null;
+  const content = animate ? <AnimatePresence>{open && body}</AnimatePresence> : (open ? body : null);
+  return host ? createPortal(content, host) : content;
 }
 
 export function Segmented({ options, value, onChange }) {
