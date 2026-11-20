@@ -58,7 +58,7 @@ body {
   position: absolute; inset: 0; z-index: 60;
   display: flex; flex-direction: column;
   background: var(--paper, #f0f1ec);
-  animation: page-fade .28s ease both;
+  /* 进出场由 motion 弹簧接管（App.jsx），不设 animation 避免双驱动 */
 }
 .app-layer > .page { flex: 1; min-height: 0; }
 
@@ -700,16 +700,9 @@ body {
   transform: scale(.97);
   transition: transform .1s ease-out;
 }
-.sheet { animation: sheet-up .34s var(--ease-spring); }
-.sheet.closing { animation: sheet-out .26s var(--ease-smooth) forwards; }
-.sheet-mask.closing { animation: mask-out .26s var(--ease-smooth) forwards; }
+/* Sheet 进出场已由 framer-motion AnimatePresence 接管（ui.jsx），
+   此处不再设 animation，避免 CSS 与 JS 双驱动冲突。transform 亦由 motion 控制。 */
 .tabbar-item svg { transition: transform .36s var(--ease-spring), color .2s var(--ease-smooth); }
-/* 点击 Tab 不带动量 → 去掉旧 1.3× 弹跳，改临界阻尼轻缩放 */
-.tabbar-item.active svg { animation: v41-tab-in .36s var(--ease-smooth) both; }
-@keyframes v41-tab-in {
-  from { transform: scale(.88); opacity: .6; }
-  to   { transform: scale(1);   opacity: 1; }
-}
 .cm-seg-btn, .hx-method-item, .chip, .p-pill, .hx-quick-ico {
   transition: transform .3s var(--ease-spring),
               background-color .2s var(--ease-smooth),

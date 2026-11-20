@@ -20,3 +20,8 @@ Thumbs.db
 
 # 鱼图素材中间产物（由 assets/build_fish_assets.py 生成）
 assets/fish-cutout/
+
+# 崩溃转储文件（可能数 GB，禁止入库）
+core
+core.*
+*.core

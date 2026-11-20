@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Icon from './icons.jsx';
+import { SPRING, ENABLE_MOTION } from '../motion/config.js';
+import { useReducedMotionSafe } from '../motion/hooks.js';
 
 /** 分数圆环 */
 export function ScoreRing({ score, level, size = 96 }) {
@@ -38,26 +41,33 @@ export function ReliabilityBadge({ level }) {
 }
 
 export function Sheet({ open, title, onClose, children }) {
-  const [visible, setVisible] = useState(open);
-  const [closing, setClosing] = useState(false);
+  // 弹簧动效：AnimatePresence 自动管理进出场，可打断、从实时值起播。
+  // 签名保持不变（全站 20+ 调用点不受影响）。降级开关见 ENABLE_MOTION.sheet。
+  const reduce = useReducedMotionSafe();
+  const animate = ENABLE_MOTION.sheet;
+  const transition = reduce ? { duration: 0 } : SPRING.sheet;
 
-  useEffect(() => {
-    if (open) {
-      setVisible(true);
-      setClosing(false);
-    } else if (visible) {
-      // 退场动画：先播 closing，240ms 后真正卸载
-      setClosing(true);
-      const t = setTimeout(() => { setVisible(false); setClosing(false); }, 240);
-      return () => clearTimeout(t);
-    }
-  }, [open, visible]);
-
-  if (!visible) return null;
-  return (
+  const body = (
     <>
-      <div className={`sheet-mask${closing ? ' closing' : ''}`} onClick={onClose} />
-      <div className={`sheet${closing ? ' closing' : ''}`}>
+      <motion.div
+        key="sheet-mask"
+        className="sheet-mask"
+        initial={animate ? { opacity: 0 } : false}
+        animate={{ opacity: 1 }}
+        exit={animate ? { opacity: 0 } : undefined}
+        transition={reduce ? { duration: 0 } : { duration: 0.22 }}
+        onClick={onClose}
+      />
+      <motion.div
+        key="sheet-panel"
+        className="sheet"
+        initial={animate ? { y: '100%' } : false}
+        animate={{ y: 0 }}
+        exit={animate ? { y: '100%' } : undefined}
+        transition={transition}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="sheet-handle" />
         {title && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -66,9 +76,12 @@ export function Sheet({ open, title, onClose, children }) {
           </div>
         )}
         {children}
-      </div>
+      </motion.div>
     </>
   );
+
+  if (!animate) return open ? body : null;
+  return <AnimatePresence>{open && body}</AnimatePresence>;
 }
 
 export function Segmented({ options, value, onChange }) {

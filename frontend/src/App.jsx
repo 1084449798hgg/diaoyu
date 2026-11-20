@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './store.jsx';
+import { SPRING, MOTION_VARIANTS, ENABLE_MOTION } from './motion/config.js';
+import { useReducedMotionSafe } from './motion/hooks.js';
 import HomePage from './pages/HomePage.jsx';
 import FishingIndexPage from './pages/FishingIndexPage.jsx';
 import CommunityPage from './pages/CommunityPage.jsx';
@@ -20,6 +23,8 @@ const TABS = [
 ];
 
 export default function App() {
+  const reduce = useReducedMotionSafe();
+  const layerMotion = ENABLE_MOTION.layer && !reduce;
   const [tab, setTab] = useState('home');
   // 已访问过的 Tab 保持挂载（CSS 隐藏而非卸载），切回时状态与滚动位置不丢
   const [visited, setVisited] = useState(['home']);
@@ -121,31 +126,59 @@ export default function App() {
             aria-label={t.label}
             aria-current={tab === t.key ? 'page' : undefined}
           >
-            <Icon name={t.icon} size={21} filled={tab === t.key} />
+            <motion.span
+              className="tab-icon"
+              style={{ display: 'inline-flex' }}
+              whileTap={reduce ? undefined : { scale: 0.86 }}
+              transition={SPRING.press}
+            >
+              <Icon name={t.icon} size={21} filled={tab === t.key} />
+            </motion.span>
             <span>{t.label}</span>
           </button>
         ))}
       </nav>
 
-      {/* 全屏页用叠加层覆盖，底层 5 个 Tab 不卸载，返回后状态完整 */}
-      {publishing && (
-        <div className="app-layer">
-          <PublishPage
-            onClose={() => setPublishing(false)}
-            onPublished={() => { setPublishing(false); goTab('community'); }}
-          />
-        </div>
-      )}
-      {reasoning && (
-        <div className="app-layer">
-          <ReasoningPage onClose={() => setReasoning(false)} />
-        </div>
-      )}
-      {atlas && (
-        <div className="app-layer">
-          <FishAtlasPage onClose={() => setAtlas(false)} />
-        </div>
-      )}
+      {/* 全屏页用叠加层覆盖，底层 5 个 Tab 不卸载，返回后状态完整。
+          进出场由 motion 弹簧接管，可打断、从实时值起播；CSS page-fade 已移除避免双驱动 */}
+      <AnimatePresence>
+        {publishing && (
+          <motion.div
+            key="layer-publish" className="app-layer"
+            initial={layerMotion ? MOTION_VARIANTS.fullLayer.initial : false}
+            animate={MOTION_VARIANTS.fullLayer.animate}
+            exit={layerMotion ? MOTION_VARIANTS.fullLayer.exit : undefined}
+            transition={reduce ? { duration: 0 } : SPRING.sheet}
+          >
+            <PublishPage
+              onClose={() => setPublishing(false)}
+              onPublished={() => { setPublishing(false); goTab('community'); }}
+            />
+          </motion.div>
+        )}
+        {reasoning && (
+          <motion.div
+            key="layer-reasoning" className="app-layer"
+            initial={layerMotion ? MOTION_VARIANTS.fullLayer.initial : false}
+            animate={MOTION_VARIANTS.fullLayer.animate}
+            exit={layerMotion ? MOTION_VARIANTS.fullLayer.exit : undefined}
+            transition={reduce ? { duration: 0 } : SPRING.sheet}
+          >
+            <ReasoningPage onClose={() => setReasoning(false)} />
+          </motion.div>
+        )}
+        {atlas && (
+          <motion.div
+            key="layer-atlas" className="app-layer"
+            initial={layerMotion ? MOTION_VARIANTS.fullLayer.initial : false}
+            animate={MOTION_VARIANTS.fullLayer.animate}
+            exit={layerMotion ? MOTION_VARIANTS.fullLayer.exit : undefined}
+            transition={reduce ? { duration: 0 } : SPRING.sheet}
+          >
+            <FishAtlasPage onClose={() => setAtlas(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

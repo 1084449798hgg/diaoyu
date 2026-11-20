@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { api, setToken } from './api.js';
+import { SPRING, MOTION_VARIANTS, ENABLE_MOTION } from './motion/config.js';
+import { useReducedMotionSafe } from './motion/hooks.js';
 
 const AuthCtx = createContext(null);
 const ToastCtx = createContext(() => {});
@@ -13,6 +16,7 @@ export function useToast() {
 }
 
 export function AuthProvider({ children }) {
+  const reduce = useReducedMotionSafe();
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem('fa_user');
     return raw ? JSON.parse(raw) : null;
@@ -47,11 +51,20 @@ export function AuthProvider({ children }) {
     <AuthCtx.Provider value={{ user, login, logout }}>
       <ToastCtx.Provider value={showToast}>
         {children}
-        {toast && (
-          <div className={`toast toast-${toast.type}`} key={toast.id}>
-            {toast.message}
-          </div>
-        )}
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              className={`toast toast-${toast.type}`}
+              key={toast.id}
+              initial={ENABLE_MOTION.toast && !reduce ? MOTION_VARIANTS.toast.initial : false}
+              animate={MOTION_VARIANTS.toast.animate}
+              exit={ENABLE_MOTION.toast && !reduce ? MOTION_VARIANTS.toast.exit : undefined}
+              transition={reduce ? { duration: 0 } : SPRING.ui}
+            >
+              {toast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </ToastCtx.Provider>
     </AuthCtx.Provider>
   );
