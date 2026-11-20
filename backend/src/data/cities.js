@@ -1,0 +1,50 @@
+/**
+ * 内置热门城市表（省市区选择用）
+ * 供「切换钓点」弹窗的城市 chip 列表使用；坐标为城市中心，用于地理编码兜底与动态钓点生成。
+ * 已预设钓点的城市（见 seed.sql）在 spotCount 中体现，未预设的城市走 /spots/ensure 幂等生成。
+ */
+const CITIES = [
+  { name: '杭州', province: '浙江省', cityCode: '杭州', lng: 120.155, lat: 30.274 },
+  { name: '北京', province: '北京市', cityCode: '北京', lng: 116.407, lat: 39.904 },
+  { name: '上海', province: '上海市', cityCode: '上海', lng: 121.474, lat: 31.230 },
+  { name: '武汉', province: '湖北省', cityCode: '武汉', lng: 114.306, lat: 30.593 },
+  { name: '广州', province: '广东省', cityCode: '广州', lng: 113.264, lat: 23.129 },
+  { name: '成都', province: '四川省', cityCode: '成都', lng: 104.066, lat: 30.573 },
+  { name: '青岛', province: '山东省', cityCode: '青岛', lng: 120.383, lat: 36.067 },
+  { name: '南京', province: '江苏省', cityCode: '南京', lng: 118.797, lat: 32.060 },
+  { name: '长沙', province: '湖南省', cityCode: '长沙', lng: 112.939, lat: 28.228 },
+  { name: '西安', province: '陕西省', cityCode: '西安', lng: 108.940, lat: 34.341 },
+  { name: '重庆', province: '重庆市', cityCode: '重庆', lng: 106.551, lat: 29.563 },
+  { name: '天津', province: '天津市', cityCode: '天津', lng: 117.200, lat: 39.084 },
+  { name: '深圳', province: '广东省', cityCode: '深圳', lng: 114.058, lat: 22.543 },
+  { name: '苏州', province: '江苏省', cityCode: '苏州', lng: 120.585, lat: 31.299 },
+  { name: '无锡', province: '江苏省', cityCode: '无锡', lng: 120.312, lat: 31.491 },
+  { name: '常州', province: '江苏省', cityCode: '常州', lng: 119.974, lat: 31.811 },
+  { name: '宁波', province: '浙江省', cityCode: '宁波', lng: 121.550, lat: 29.874 },
+  { name: '温州', province: '浙江省', cityCode: '温州', lng: 120.699, lat: 27.994 },
+  { name: '福州', province: '福建省', cityCode: '福州', lng: 119.296, lat: 26.074 },
+  { name: '厦门', province: '福建省', cityCode: '厦门', lng: 118.089, lat: 24.480 },
+  { name: '南昌', province: '江西省', cityCode: '南昌', lng: 115.858, lat: 28.683 },
+  { name: '合肥', province: '安徽省', cityCode: '合肥', lng: 117.283, lat: 31.862 },
+  { name: '郑州', province: '河南省', cityCode: '郑州', lng: 113.625, lat: 34.747 },
+  { name: '济南', province: '山东省', cityCode: '济南', lng: 117.121, lat: 36.651 },
+  { name: '烟台', province: '山东省', cityCode: '烟台', lng: 121.448, lat: 37.464 },
+  { name: '大连', province: '辽宁省', cityCode: '大连', lng: 121.614, lat: 38.914 },
+  { name: '沈阳', province: '辽宁省', cityCode: '沈阳', lng: 123.432, lat: 41.805 },
+  { name: '哈尔滨', province: '黑龙江省', cityCode: '哈尔滨', lng: 126.642, lat: 45.756 },
+  { name: '长春', province: '吉林省', cityCode: '长春', lng: 125.324, lat: 43.886 },
+  { name: '昆明', province: '云南省', cityCode: '昆明', lng: 102.833, lat: 24.880 },
+  { name: '贵阳', province: '贵州省', cityCode: '贵阳', lng: 106.630, lat: 26.647 },
+  { name: '南宁', province: '广西壮族自治区', cityCode: '南宁', lng: 108.367, lat: 22.817 },
+  { name: '海口', province: '海南省', cityCode: '海口', lng: 110.332, lat: 20.044 },
+  { name: '太原', province: '山西省', cityCode: '太原', lng: 112.549, lat: 37.870 },
+  { name: '石家庄', province: '河北省', cityCode: '石家庄', lng: 114.515, lat: 38.043 },
+  { name: '兰州', province: '甘肃省', cityCode: '兰州', lng: 103.834, lat: 36.061 },
+  { name: '乌鲁木齐', province: '新疆维吾尔自治区', cityCode: '乌鲁木齐', lng: 87.617, lat: 43.793 },
+  { name: '拉萨', province: '西藏自治区', cityCode: '拉萨', lng: 91.132, lat: 29.660 },
+  { name: '呼和浩特', province: '内蒙古自治区', cityCode: '呼和浩特', lng: 111.749, lat: 40.842 },
+  { name: '银川', province: '宁夏回族自治区', cityCode: '银川', lng: 106.278, lat: 38.487 },
+  { name: '西宁', province: '青海省', cityCode: '西宁', lng: 101.778, lat: 36.617 },
+];
+
+module.exports = { CITIES };

@@ -77,6 +77,11 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
   const [vipSheet, setVipSheet] = useState(false);
   const [waterSheet, setWaterSheet] = useState(false);
   const [noticeSheet, setNoticeSheet] = useState(false);
+  // 省市区选择（仅「切换钓点」弹窗内部使用，不改变任何现有交互与布局）
+  const [cities, setCities] = useState([]);
+  const [currentCity, setCurrentCity] = useState('杭州');
+  const [citySearch, setCitySearch] = useState('');
+  const [loadingCity, setLoadingCity] = useState(false);
 
   const today = todayStr(0);
   const nowHour = useMemo(() => new Date().getHours(), []);
@@ -94,6 +99,51 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
       } catch (e) { showToast(e.message, 'error'); }
     })();
   }, [showToast]);
+
+  // 加载内置城市列表（供「切换钓点」弹窗内选择）
+  useEffect(() => {
+    api.spotsCities().then((d) => setCities(d.cities || [])).catch(() => {});
+  }, []);
+
+  // 选择城市：加载该城市钓点并自动聚焦第一个，触发指数按当地天气重算
+  const pickCity = async (city) => {
+    setCitySearch('');
+    setLoadingCity(true);
+    try {
+      let data = city.spotCount > 0
+        ? await api.spotsByCity(city.cityCode || city.name)
+        : await api.ensureSpots({ cityCode: city.cityCode || city.name, province: city.province, district: city.district, lng: city.lng, lat: city.lat });
+      const list = (data.spots || []).filter((s) => !s.banned);
+      if (list.length) {
+        setSpots(list);
+        setCurrentCity(city.name);
+        setSpotId(list[0].id);
+      } else {
+        showToast('该城市暂无可用钓点', 'error');
+      }
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { setLoadingCity(false); }
+  };
+
+  // 搜索城市（地理编码，支持不在内置列表的城市）
+  const searchCity = async (e) => {
+    e.preventDefault();
+    const name = citySearch.trim();
+    if (!name) return;
+    setLoadingCity(true);
+    try {
+      const d = await api.geocode(name);
+      if (d.results && d.results.length) {
+        pickCity(d.results[0]);
+      } else {
+        // 地理编码无结果时，降级匹配内置城市列表（中文覆盖更全）
+        const local = cities.find((c) => c.name.includes(name) || name.includes(c.name));
+        if (local) pickCity(local);
+        else showToast('未找到该城市', 'error');
+      }
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setLoadingCity(false); }
+  };
 
   useEffect(() => {
     (async () => {
@@ -137,7 +187,8 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
   const pDelta = cur && p3h ? Math.round((cur.pressure - p3h.pressure) * 10) / 10 : 0;
   const wDelta = cur && hourly[Math.max(0, nowHour - 3)]
     ? Math.round((cur.waterTemp - hourly[Math.max(0, nowHour - 3)].waterTemp) * 10) / 10 : 0;
-  const score = Math.round(bw?.avgScore ?? topHour.score ?? 0);
+  // v1.1：优先取后端模型日分（score），回退旧字段确保兼容
+  const score = Math.round(forecast?.score ?? bw?.avgScore ?? topHour.score ?? 0);
   const segments = useMemo(() => goldenWindows(hourly), [hourly]);
   const shownCatches = useMemo(() => dedupeByImage(catches, 4), [catches]);
 
@@ -387,6 +438,32 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
 
       {/* ---------- Sheets ---------- */}
       <Sheet open={spotPicker} title="切换钓点" onClose={() => setSpotPicker(false)}>
+        {/* 城市选择区（仅追加，原钓点列表与交互完全不变） */}
+        <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--hair)' }}>
+          <div style={{ fontSize: 10.5, color: 'var(--ink-3)', fontWeight: 700, letterSpacing: '.08em', marginBottom: 8 }}>
+            选择城市 · 按当地实时天气计算鱼情
+          </div>
+          <form onSubmit={searchCity} style={{ display: 'flex', gap: 6, marginBottom: 9 }}>
+            <input className="input" value={citySearch} onChange={(e) => setCitySearch(e.target.value)}
+              placeholder="搜索城市，如 厦门 / 大理" style={{ flex: 1, height: 34, fontSize: 12 }} />
+            <button type="submit" className="p-btn p-btn-dark" style={{ height: 34, padding: '0 14px', fontSize: 12 }}>
+              {loadingCity ? '…' : '搜索'}
+            </button>
+          </form>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 132, overflowY: 'auto' }}>
+            {cities.map((c) => (
+              <button key={c.cityCode + c.name} onClick={() => pickCity(c)}
+                className="chip" style={{
+                  padding: '5px 11px', fontSize: 11.5, cursor: 'pointer',
+                  background: currentCity === c.name ? 'var(--forest)' : undefined,
+                  color: currentCity === c.name ? '#fff' : undefined,
+                  borderColor: currentCity === c.name ? 'var(--forest)' : undefined,
+                }}>
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
         {spots.map((s) => (
           <button key={s.id} className="p-card" style={{ width: '100%', textAlign: 'left', display: 'block' }}
             onClick={() => { setSpotId(s.id); setSpotPicker(false); }}>

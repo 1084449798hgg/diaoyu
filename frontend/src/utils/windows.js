@@ -9,13 +9,17 @@
  * 过长时收敛到分数最高的连续子段。
  */
 
-/** 当日高分阈值：至少高于均值 1 分、贴近峰值（峰值 -8），且不低于 70 */
+/**
+ * 当日高分阈值：高于均值 1 分、贴近峰值（峰值 -8）。
+ * 下限用「峰值 - 8」自适应，不再固定 70 —— 真实天气下低分日（如冷季水温低，
+ * 全天 34-42 分）也应能选出相对最好的时段，而不是返回空的「--」。
+ */
 export function windowThreshold(hourly = []) {
-  if (!hourly.length) return 70;
+  if (!hourly.length) return 60;
   const scores = hourly.map((h) => Number(h.score) || 0);
   const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
   const max = Math.max(...scores);
-  return Math.max(Math.round(mean + 1), max - 8, 70);
+  return Math.max(Math.round(mean + 1), max - 8);
 }
 
 /**

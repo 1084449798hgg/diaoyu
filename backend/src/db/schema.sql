@@ -130,3 +130,27 @@ CREATE TABLE IF NOT EXISTS reports (
   created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_target (target_type, target_id)
 ) ENGINE=InnoDB COMMENT='UGC举报';
+
+-- ============================================================
+-- v1.2 增量列（幂等）：省市区定位 + 算法版本
+-- seed.js 用 CREATE TABLE IF NOT EXISTS，已存在的表需靠 ALTER 补列
+-- ============================================================
+SET @col := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fishing_spots' AND COLUMN_NAME = 'province');
+SET @sql := IF(@col = 0, 'ALTER TABLE fishing_spots ADD COLUMN province VARCHAR(32) DEFAULT NULL COMMENT ''省'' AFTER city', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fishing_spots' AND COLUMN_NAME = 'city_code');
+SET @sql := IF(@col = 0, 'ALTER TABLE fishing_spots ADD COLUMN city_code VARCHAR(32) DEFAULT NULL COMMENT ''市'' AFTER province', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fishing_spots' AND COLUMN_NAME = 'district');
+SET @sql := IF(@col = 0, 'ALTER TABLE fishing_spots ADD COLUMN district VARCHAR(64) DEFAULT NULL COMMENT ''区/县'' AFTER city_code', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'forecast_snapshots' AND COLUMN_NAME = 'model_version');
+SET @sql := IF(@col = 0, 'ALTER TABLE forecast_snapshots ADD COLUMN model_version VARCHAR(32) DEFAULT NULL COMMENT ''算法版本'' AFTER species', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'fishing_spots' AND INDEX_NAME = 'idx_city_code');
+SET @sql := IF(@idx = 0, 'CREATE INDEX idx_city_code ON fishing_spots(city_code)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

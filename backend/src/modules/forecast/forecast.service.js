@@ -1,6 +1,6 @@
 /**
  * 鱼情预报服务：Redis 缓存 → DB 快照 → 引擎计算，三级链路
- * 追加需求：days=15 逐日趋势（VIP 黄金窗口预测）、AI 建议文案、未来两小时降雨提示、溶氧透出
+ * v1.1：指数走权威模型（reasoning），顶层透出 score/level/modelVersion。
  */
 const pool = require('../../db/pool');
 const { cacheGet, cacheSet, secondsUntilEndOfDay } = require('../../cache/redis');
@@ -10,6 +10,7 @@ const reasoningEngine = require('./reasoning');
 const { notFound, badRequest } = require('../../middleware/errors');
 
 const DISCLAIMER = '预测仅供参考，不构成出钓决策保证';
+const MODEL_VERSION = 'fishcast-v1.1'; // 算法版本，改算法时递增使缓存/快照自动失效
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_DAYS = 15;
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -27,15 +28,14 @@ async function getSpeciesConfig(name) {
 }
 
 function buildResult(spot, species, dateStr, hourly, bestWindow, source, weather, topFactors, extra = {}) {
-  // 过去 24h + 当天全天气压序列（需求文档 FR-02：展示过去 24 小时气压趋势）
   const pressureTrend = weather
     ? weather.hourly
         .filter((h) => h.time.slice(0, 10) <= dateStr)
         .map((h) => ({ time: h.time, hour: h.hour, pressure: h.pressure, isToday: h.time.slice(0, 10) === dateStr }))
     : [];
-  const advice = computeAdvice(hourly, bestWindow, weather);
+  const advice = extra.advice || computeAdvice(hourly, bestWindow, weather, extra.R);
   const nowUtc = new Date();
-  const nowHour = (nowUtc.getUTCHours() + 8) % 24; // 东八区当前小时
+  const nowHour = (nowUtc.getUTCHours() + 8) % 24;
   const todayStr = `${nowUtc.getUTCFullYear()}-${pad2(nowUtc.getUTCMonth() + 1)}-${pad2(nowUtc.getUTCDate())}`;
   const rain = dateStr === todayStr ? nextRainInfo(hourly, nowHour) : null;
   return {
@@ -43,6 +43,10 @@ function buildResult(spot, species, dateStr, hourly, bestWindow, source, weather
     spotName: spot.name,
     date: dateStr,
     species: species.species,
+    // v1.1 顶层权威分数（首页优先取此字段）
+    score: extra.score ?? bestWindow?.avgScore ?? 0,
+    level: extra.level ?? bestWindow?.level ?? '',
+    modelVersion: MODEL_VERSION,
     hourly: hourly.map((h) => ({
       hour: h.hour,
       score: h.score,
@@ -57,7 +61,7 @@ function buildResult(spot, species, dateStr, hourly, bestWindow, source, weather
       waterTemp: h.waterTemp,
       dissolvedOxygen: h.dissolvedOxygen,
       skycon: h.skycon,
-      factors: h.factors.map((f) => ({ key: f.key, value: f.value, label: f.label, score: f.score })),
+      factors: (h.factors || []).map((f) => ({ key: f.key, value: f.value, label: f.label, score: f.score })),
     })),
     bestWindow,
     topFactors: topFactors || [],
@@ -82,49 +86,54 @@ async function getForecast({ spotId, dateStr, speciesName, days = 1 }) {
   const spot = await getSpot(spotId);
   const species = await getSpeciesConfig(speciesName);
 
-  // 1) Redis 快照缓存（当天 23:59 过期）
-  const cacheKey = `forecast:${spotId}:${dateStr}:${speciesName}:d${days}`;
+  // 1) Redis 缓存（带模型版本）
+  const cacheKey = `forecast:${MODEL_VERSION}:${spotId}:${dateStr}:${speciesName}:d${days}`;
   const cached = await cacheGet(cacheKey);
   if (cached) return { ...cached, meta: { source: 'cache' } };
 
-  // 2) MySQL 快照（未过期；仅单日预报走此链路，多日趋势实时算）
+  // 2) MySQL 快照（带模型版本；仅单日）
   if (days === 1) {
     const [rows] = await pool.query(
-      'SELECT * FROM forecast_snapshots WHERE spot_id = ? AND target_date = ? AND species = ?',
-      [spotId, dateStr, speciesName]
+      'SELECT * FROM forecast_snapshots WHERE spot_id = ? AND target_date = ? AND species = ? AND model_version = ?',
+      [spotId, dateStr, speciesName, MODEL_VERSION]
     );
     if (rows.length && new Date(rows[0].expires_at) > new Date()) {
       const weather = await weatherService.getWeather(spot, dateStr);
-      const topFactors = computeTopFactors(rows[0].hourly_json, rows[0].best_window_json, species.weights_json, species);
-      const result = buildResult(spot, species, dateStr, rows[0].hourly_json, rows[0].best_window_json, 'snapshot', weather, topFactors);
+      const R = reasoningEngine.reason(spot, species, weather, dateStr);
+      const topFactors = computeTopFactors(rows[0].hourly_json, rows[0].best_window_json, species.weights_json, species, R);
+      const result = buildResult(spot, species, dateStr, rows[0].hourly_json, rows[0].best_window_json, 'snapshot', weather, topFactors, {
+        score: R.conclusion.score, level: R.conclusion.level, advice: R.conclusion.summary, R,
+      });
       await cacheSet(cacheKey, result, secondsUntilEndOfDay(dateStr));
       return result;
     }
   }
 
-  // 3) 实时计算（天气经 Redis 缓存 + 降级）
+  // 3) 实时计算
   const weather = await weatherService.getWeather(spot, dateStr);
-  const { hourly, bestWindow } = computeForecast(spot, species, weather, dateStr);
-  const topFactors = computeTopFactors(hourly, bestWindow, species.weights_json, species);
+  const forecast = computeForecast(spot, species, weather, dateStr);
+  const { hourly, bestWindow, dayScore, level, _R: R } = forecast;
+  const topFactors = computeTopFactors(hourly, bestWindow, species.weights_json, species, R);
   const dailyTrend = days > 1 ? computeDailyTrend(spot, species, weather, dateStr, days) : null;
 
   if (days === 1) {
     await pool.query(
-      `INSERT INTO forecast_snapshots (spot_id, target_date, species, hourly_json, best_window_json, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE hourly_json = VALUES(hourly_json), best_window_json = VALUES(best_window_json), expires_at = VALUES(expires_at)`,
-      [spotId, dateStr, speciesName, JSON.stringify(hourly), JSON.stringify(bestWindow), `${dateStr} 23:59:59`]
+      `INSERT INTO forecast_snapshots (spot_id, target_date, species, hourly_json, best_window_json, model_version, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE hourly_json = VALUES(hourly_json), best_window_json = VALUES(best_window_json), model_version = VALUES(model_version), expires_at = VALUES(expires_at)`,
+      [spotId, dateStr, speciesName, JSON.stringify(hourly), JSON.stringify(bestWindow), MODEL_VERSION, `${dateStr} 23:59:59`]
     );
   }
 
-  const result = buildResult(spot, species, dateStr, hourly, bestWindow, 'computed', weather, topFactors, { dailyTrend });
+  const result = buildResult(spot, species, dateStr, hourly, bestWindow, 'computed', weather, topFactors, {
+    score: dayScore, level, advice: R && R.conclusion ? R.conclusion.summary : null, R, dailyTrend,
+  });
   await cacheSet(cacheKey, result, secondsUntilEndOfDay(dateStr));
   return result;
 }
 
 /**
- * 鱼情推理（v2 开源混合引擎）：气象 → 地理环境/水域 → 鱼情结论，可解释推理链。
- * 独立缓存键，不写入 forecast_snapshots，避免污染既有单日预报契约。
+ * 鱼情推理（v2 开源混合引擎）—— 保持原样，零回归
  */
 async function getReasoning({ spotId, dateStr, speciesName }) {
   if (!DATE_RE.test(dateStr)) throw badRequest('date 需为 YYYY-MM-DD 格式');

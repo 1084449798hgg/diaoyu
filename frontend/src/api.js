@@ -58,6 +58,10 @@ export const api = {
   spots: (params) => request(`/spots${qs(params)}`),
   spot: (id) => request(`/spots/${id}`),
   spotStats: () => request('/spots/stats'),
+  spotsCities: () => request('/spots/cities'),
+  spotsByCity: (city) => request(`/spots${qs({ city })}`),
+  geocode: (name) => request(`/spots/geocode${qs({ name })}`),
+  ensureSpots: (body) => request('/spots/ensure', { method: 'POST', body }),
   // forecast
   forecast: (params) => request(`/forecast${qs(params)}`),
   forecastReasoning: (params) => request(`/forecast/reasoning${qs(params)}`),

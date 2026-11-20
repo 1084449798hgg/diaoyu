@@ -14,7 +14,9 @@ module.exports = {
     secret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
-  // 和风天气 Web API Key：留空时使用内置模拟数据源（结构一致，配置后自动切换）
+  // 天气数据源：open-meteo（默认，免 Key 真实天气）| hefeng（需 KEY）| simulator（内置模拟）
+  weatherSource: process.env.WEATHER_SOURCE || 'open-meteo',
+  // 和风天气 Web API Key（仅 WEATHER_SOURCE=hefeng 时启用）
   hefengApiKey: process.env.HEFENG_API_KEY || '',
   isDev: process.env.NODE_ENV !== 'production',
 };
