@@ -25,6 +25,10 @@ const wikiRoutes = require('./modules/wiki/wiki.routes');
 
 const app = express();
 
+// 经过内网穿透/反向代理时请求会带 X-Forwarded-For，需信任一层代理，
+// 否则 express-rate-limit 校验报错、限流无法正确识别客户端 IP。
+app.set('trust proxy', 1);
+
 app.use(cors());
 // 流式压缩会产生 chunked 响应（无 Content-Length），部分内网穿透网关会返回 502。
 // 默认关闭：静态资源由下方「预压缩 + 固定 Content-Length」中间件处理，
