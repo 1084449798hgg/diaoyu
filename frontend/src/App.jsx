@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './store.jsx';
 import { SPRING, MOTION_VARIANTS, ENABLE_MOTION } from './motion/config.js';
-import { useReducedMotionSafe } from './motion/hooks.js';
+import { useReducedMotionSafe, useEdgeBack } from './motion/hooks.js';
 import HomePage from './pages/HomePage.jsx';
 import FishingIndexPage from './pages/FishingIndexPage.jsx';
 import CommunityPage from './pages/CommunityPage.jsx';
@@ -140,46 +140,45 @@ export default function App() {
       </nav>
 
       {/* 全屏页用叠加层覆盖，底层 5 个 Tab 不卸载，返回后状态完整。
-          进出场由 motion 弹簧接管，可打断、从实时值起播；CSS page-fade 已移除避免双驱动 */}
+          进出场由 motion 弹簧接管，可打断、从实时值起播；左缘右滑可返回 */}
       <AnimatePresence>
         {publishing && (
-          <motion.div
-            key="layer-publish" className="app-layer"
-            initial={layerMotion ? MOTION_VARIANTS.fullLayer.initial : false}
-            animate={MOTION_VARIANTS.fullLayer.animate}
-            exit={layerMotion ? MOTION_VARIANTS.fullLayer.exit : undefined}
-            transition={reduce ? { duration: 0 } : SPRING.sheet}
-          >
+          <FullLayer key="layer-publish" layerKey="layer-publish" motionOn={layerMotion} reduce={reduce} onBack={() => setPublishing(false)}>
             <PublishPage
               onClose={() => setPublishing(false)}
               onPublished={() => { setPublishing(false); goTab('community'); }}
             />
-          </motion.div>
+          </FullLayer>
         )}
         {reasoning && (
-          <motion.div
-            key="layer-reasoning" className="app-layer"
-            initial={layerMotion ? MOTION_VARIANTS.fullLayer.initial : false}
-            animate={MOTION_VARIANTS.fullLayer.animate}
-            exit={layerMotion ? MOTION_VARIANTS.fullLayer.exit : undefined}
-            transition={reduce ? { duration: 0 } : SPRING.sheet}
-          >
+          <FullLayer key="layer-reasoning" layerKey="layer-reasoning" motionOn={layerMotion} reduce={reduce} onBack={() => setReasoning(false)}>
             <ReasoningPage onClose={() => setReasoning(false)} />
-          </motion.div>
+          </FullLayer>
         )}
         {atlas && (
-          <motion.div
-            key="layer-atlas" className="app-layer"
-            initial={layerMotion ? MOTION_VARIANTS.fullLayer.initial : false}
-            animate={MOTION_VARIANTS.fullLayer.animate}
-            exit={layerMotion ? MOTION_VARIANTS.fullLayer.exit : undefined}
-            transition={reduce ? { duration: 0 } : SPRING.sheet}
-          >
+          <FullLayer key="layer-atlas" layerKey="layer-atlas" motionOn={layerMotion} reduce={reduce} onBack={() => setAtlas(false)}>
             <FishAtlasPage onClose={() => setAtlas(false)} />
-          </motion.div>
+          </FullLayer>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** 全屏叠加层：弹簧进出场 + 左缘右滑返回 */
+function FullLayer({ children, motionOn, reduce, onBack }) {
+  const edge = useEdgeBack(onBack, ENABLE_MOTION.gesture && !reduce);
+  return (
+    <motion.div
+      className="app-layer"
+      initial={motionOn ? MOTION_VARIANTS.fullLayer.initial : false}
+      animate={MOTION_VARIANTS.fullLayer.animate}
+      exit={motionOn ? MOTION_VARIANTS.fullLayer.exit : undefined}
+      transition={reduce ? { duration: 0 } : SPRING.sheet}
+      {...edge}
+    >
+      {children}
+    </motion.div>
   );
 }
 

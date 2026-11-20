@@ -24,11 +24,11 @@ export const SPRING = {
 
 /** 语义化位移：进出场同路径 */
 export const MOTION_VARIANTS = {
-  /** 底部弹出（Sheet）：从下方进入，退出回到下方 */
+  /** 底部弹出（Sheet）：从下方进入，退出更快（苹果：退场比进场利落） */
   bottomSheet: {
     initial: { y: '100%', opacity: 0.85 },
     animate: { y: 0, opacity: 1 },
-    exit: { y: '100%', opacity: 0.6 },
+    exit: { y: '100%', opacity: 0.6, transition: { type: 'spring', stiffness: 620, damping: 46, mass: 0.8 } },
   },
   /** 全屏页：轻微下沉 + 淡入，退出回到下沉位 */
   fullLayer: {

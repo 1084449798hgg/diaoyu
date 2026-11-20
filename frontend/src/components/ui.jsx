@@ -1,8 +1,8 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, useDragControls } from 'framer-motion';
 import Icon from './icons.jsx';
-import { SPRING, ENABLE_MOTION } from '../motion/config.js';
-import { useReducedMotionSafe } from '../motion/hooks.js';
+import { SPRING, ENABLE_MOTION, MOTION_VARIANTS } from '../motion/config.js';
+import { useReducedMotionSafe, useHaptic } from '../motion/hooks.js';
 
 /** 分数圆环 */
 export function ScoreRing({ score, level, size = 96 }) {
@@ -41,11 +41,33 @@ export function ReliabilityBadge({ level }) {
 }
 
 export function Sheet({ open, title, onClose, children }) {
-  // 弹簧动效：AnimatePresence 自动管理进出场，可打断、从实时值起播。
-  // 签名保持不变（全站 20+ 调用点不受影响）。降级开关见 ENABLE_MOTION.sheet。
+  // 弹簧 + 手势：AnimatePresence 管理进出场，拖拽把手可下拉关闭，速度交接。
+  // 签名保持不变（全站 20+ 调用点不受影响）。降级开关见 ENABLE_MOTION.sheet/gesture。
   const reduce = useReducedMotionSafe();
   const animate = ENABLE_MOTION.sheet;
+  const gesture = ENABLE_MOTION.gesture && !reduce;
+  const vibrate = useHaptic();
   const transition = reduce ? { duration: 0 } : SPRING.sheet;
+
+  // 拖拽位移驱动遮罩渐隐：向下拖时遮罩连续变淡（不是只在结束时跳变）
+  const dragY = useMotionValue(0);
+  const maskOpacity = useTransform(dragY, [0, 320], [1, 0.15]);
+  const dragControls = useDragControls();
+
+  const handleDrag = (_, info) => {
+    dragY.set(Math.max(0, info.offset.y));
+  };
+  const handleDragEnd = (_, info) => {
+    // 位移阈值 110px 或下拉速度 600px/s → 关闭
+    if (info.offset.y > 110 || info.velocity.y > 600) {
+      vibrate(12);
+      // 不清零 dragY：让 AnimatePresence 的 exit 从当前位置直接飞出（速度交接、进出场同路径），
+      // 避免先弹回 0 再退场造成两段动画叠加、WebKit 下退场拖到 1.5s
+      onClose();
+    } else {
+      dragY.set(0); // 未达阈值：遮罩透明度复位，面板由 motion 弹簧弹回
+    }
+  };
 
   const body = (
     <>
@@ -56,6 +78,7 @@ export function Sheet({ open, title, onClose, children }) {
         animate={{ opacity: 1 }}
         exit={animate ? { opacity: 0 } : undefined}
         transition={reduce ? { duration: 0 } : { duration: 0.22 }}
+        style={gesture ? { opacity: maskOpacity } : undefined}
         onClick={onClose}
       />
       <motion.div
@@ -63,12 +86,27 @@ export function Sheet({ open, title, onClose, children }) {
         className="sheet"
         initial={animate ? { y: '100%' } : false}
         animate={{ y: 0 }}
-        exit={animate ? { y: '100%' } : undefined}
+        exit={animate ? MOTION_VARIANTS.bottomSheet.exit : undefined}
         transition={transition}
+        drag={gesture ? 'y' : false}
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.4 }}
+        dragMomentum={false}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
         role="dialog"
         aria-modal="true"
       >
-        <div className="sheet-handle" />
+        {/* 拖拽把手成为唯一拖动热区，避免干扰 Sheet 内部长列表滚动 */}
+        <div
+          className="sheet-handle-zone"
+          style={{ paddingTop: 6, paddingBottom: 10, cursor: gesture ? 'grab' : 'default', touchAction: 'none' }}
+          onPointerDown={(e) => gesture && dragControls.start(e)}
+        >
+          <div className="sheet-handle" />
+        </div>
         {title && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: 16 }}>{title}</h3>
