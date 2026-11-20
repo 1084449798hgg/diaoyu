@@ -221,13 +221,17 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
         <p className="hx-advice">{forecast?.advice || '正在解析今日钓况…'}</p>
 
         <div className="hx-golden">
-          <span className="hx-golden-label">GOLDEN</span>
-          {segments.length > 0
-            ? segments.map((s) => <span key={s.startH} className="hx-golden-pill">{hh(s.startH)}:00 – {hh(s.endH)}:00</span>)
-            : <span className="hx-golden-pill">--</span>}
-          <button className="hx-vip-mini" onClick={() => setVipSheet(true)}>
-            <Icon name="gem" size={11} /> 15天
-          </button>
+          <div className="hx-golden-head">
+            <span className="hx-golden-label">GOLDEN <em>黄金窗口</em></span>
+            <button className="hx-vip-mini" onClick={() => setVipSheet(true)}>
+              <Icon name="gem" size={11} /> 15天
+            </button>
+          </div>
+          <div className="hx-golden-pills">
+            {segments.length > 0
+              ? segments.map((s) => <span key={s.startH} className="hx-golden-pill">{hh(s.startH)}:00 – {hh(s.endH)}:00</span>)
+              : <span className="hx-golden-pill">--</span>}
+          </div>
         </div>
       </div>
 

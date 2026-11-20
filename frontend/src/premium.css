@@ -3,6 +3,15 @@
    底色：暖纸白 / 卡片：纯白大圆角 / 强调：酸性黄绿 / 深色：墨绿
    ===================================================================== */
 
+/* 草书标题字体（志莽行书 · SIL OFL），已子集化仅含"钓鱼佬"等标题用字，离线可用 */
+@font-face {
+  font-family: "ZhiMang";
+  src: url("/fonts/zhimang.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --paper: #f0f1ec;
   --paper-2: #e8eae3;
@@ -27,6 +36,7 @@
   --shadow-card: 0 2px 4px rgba(13, 26, 21, 0.02), 0 12px 32px rgba(13, 26, 21, 0.045);
   --shadow-float: 0 8px 28px rgba(13, 26, 21, 0.14);
   --font-serif: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", serif;
+  --font-cursive: "ZhiMang", "STXingkai", "Kaiti SC", cursive;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   --font-num: "SF Pro Display", "Helvetica Neue", -apple-system, "Segoe UI", sans-serif;
 }
@@ -237,7 +247,7 @@ body {
 }
 .hx-hero > * { position: relative; z-index: 1; }
 .hx-top { display: flex; align-items: flex-start; gap: 10px; }
-.hx-brand { font-family: var(--font-serif); font-size: 27px; font-weight: 900; letter-spacing: .12em; line-height: 1.1; }
+.hx-brand { font-family: var(--font-cursive); font-size: 34px; font-weight: 400; letter-spacing: .04em; line-height: 1; }
 .hx-brand sup { font-family: var(--font-sans); font-size: 8px; letter-spacing: .18em; color: rgba(216,248,79,.9); vertical-align: super; margin-left: 5px; font-weight: 700; }
 .hx-loc { display: flex; align-items: center; gap: 5px; margin-top: 7px; font-size: 11px; color: rgba(255,255,255,.58); letter-spacing: .02em; }
 .hx-icon-btn {
@@ -245,14 +255,16 @@ body {
   background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #fff; backdrop-filter: blur(6px);
 }
 
-/* 钓法分段：极简下划线 */
+/* 钓法分段：极简下划线（中文/英文共轴居中对齐） */
 .hx-method { display: flex; gap: 22px; margin-top: 22px; position: relative; }
-.hx-method-item { position: relative; padding-bottom: 9px; display: flex; flex-direction: column; gap: 2px; color: rgba(255,255,255,.42); transition: color .2s; }
-.hx-method-item .m-cn { font-size: 14px; font-weight: 700; letter-spacing: .06em; }
-.hx-method-item .m-en { font-size: 7.5px; letter-spacing: .18em; font-weight: 700; opacity: .8; }
+.hx-method-item { position: relative; padding-bottom: 9px; min-width: 44px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: rgba(255,255,255,.42); transition: color .2s; }
+.hx-method-item .m-cn { font-size: 14px; font-weight: 700; letter-spacing: .06em; line-height: 1.1; white-space: nowrap; }
+/* 英文去掉夸张字距，与中文同宽同中轴，避免上下两行错位 */
+.hx-method-item .m-en { font-size: 7.5px; letter-spacing: .08em; font-weight: 700; opacity: .8; line-height: 1; white-space: nowrap; }
 .hx-method-item.active { color: #fff; }
 .hx-method-item.active .m-en { color: var(--lime); }
-.hx-method-item i { position: absolute; bottom: 0; left: 0; width: 18px; height: 2.5px; border-radius: 2px; background: var(--lime); }
+/* 下划线居中且贴合中文宽度，选中态视觉重心稳定 */
+.hx-method-item i { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 2.5px; border-radius: 2px; background: var(--lime); }
 
 /* 评分 */
 .hx-score { display: flex; align-items: flex-end; gap: 14px; margin-top: 20px; }
@@ -266,14 +278,19 @@ body {
   font-size: 11.5px; line-height: 1.75; color: rgba(255,255,255,.66); margin: 13px 0 0;
   padding-left: 11px; border-left: 2px solid rgba(216,248,79,.45);
 }
-.hx-golden { display: flex; align-items: center; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+.hx-golden { margin-top: 15px; }
+/* 标题行：GOLDEN 与 15天按钮两端锚定，不再和胶囊抢宽度 */
+.hx-golden-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
 .hx-golden-label { font-size: 9px; font-weight: 800; letter-spacing: .14em; color: rgba(255,255,255,.45); }
+.hx-golden-label em { font-style: normal; font-family: var(--font-sans); font-size: 9px; font-weight: 600; letter-spacing: .04em; color: rgba(255,255,255,.34); margin-left: 6px; }
+/* 胶囊独占整行：grid 等分列，三个窗口一行排齐，不掉落、不参差；窗口过多时优雅换行 */
+.hx-golden-pills { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
 .hx-golden-pill {
-  display: inline-flex; align-items: center; height: 25px; padding: 0 11px; border-radius: 7px;
-  font-family: var(--font-num); font-size: 12px; font-weight: 800; letter-spacing: -.01em;
+  display: inline-flex; align-items: center; justify-content: center; height: 27px; padding: 0 8px; border-radius: 7px;
+  font-family: var(--font-num); font-size: 11.5px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap;
   background: var(--lime); color: var(--forest);
 }
-.hx-vip-mini { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,.72); padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); }
+.hx-vip-mini { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,.72); padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); white-space: nowrap; }
 
 /* 面板（上滑覆盖 hero） */
 .hx-panel { margin: -46px 0 0; position: relative; z-index: 3; }

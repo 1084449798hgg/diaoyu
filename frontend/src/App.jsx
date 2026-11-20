@@ -218,7 +218,7 @@ function LoginScreen() {
           <div style={{ width: 62, height: 62, borderRadius: 20, margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(216,248,79,.1)', border: '1px solid rgba(216,248,79,.24)' }}>
             <Icon name="fish" size={30} color="var(--lime)" strokeWidth={1.4} />
           </div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 36, fontWeight: 900, letterSpacing: '.16em', color: '#fff', lineHeight: 1.1 }}>钓鱼佬</div>
+          <div style={{ fontFamily: 'var(--font-cursive)', fontSize: 46, fontWeight: 400, letterSpacing: '.04em', color: '#fff', lineHeight: 1 }}>钓鱼佬</div>
           <div style={{ fontSize: 8, letterSpacing: '.3em', color: 'rgba(216,248,79,.8)', fontWeight: 700, marginTop: 9 }}>ANGLER · FISH FORECAST</div>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 12, lineHeight: 1.7 }}>
             逐小时开口概率 · 黄金窗口 · 水温与潮汐
