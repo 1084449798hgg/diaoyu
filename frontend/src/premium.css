@@ -31,6 +31,82 @@
   --font-num: "SF Pro Display", "Helvetica Neue", -apple-system, "Segoe UI", sans-serif;
 }
 
+/* =====================================================================
+   深色内容主题（data-theme='dark' 挂在 html 上，由 useTheme 管理）
+   只覆盖 premium 的浅色语义令牌；不碰 theme.css 的 v3 深水令牌
+   （ScoreRing 等 SVG 硬编码依赖它们）。Sheet/全屏层在 .page 作用域外，
+   故此处同时覆盖 :root 令牌与 .sheet/.app-layer 的继承色。
+   ===================================================================== */
+[data-theme='dark'] {
+  --paper: #101613;
+  --paper-2: #18211c;
+  --surface: #1a231e;
+  --surface-2: #222d26;
+  --ink: #eef2ea;
+  --ink-2: #a9b6ab;
+  --ink-3: #77857b;
+  --hair: #2c3a31;
+  --hair-2: #3a4a3f;
+  --line-lime: #4a5c2a;
+  --lime: #cdee3c;
+  --lime-deep: #b8e226;
+  --lime-soft: #2b3a1c;
+  /* --forest 保持深绿：全站「深绿底+白字」按钮（p-btn-dark/cm-seg-btn 等）依赖它，
+     反色会毁掉白字对比度。深色主题的亮色强调统一走 --lime。 */
+  --forest: #0d1a15;
+  --forest-2: #16281d;
+  --green-ok: #5fd39a;
+  --heart: #ff6b6b;
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, .2), 0 12px 32px rgba(0, 0, 0, .28);
+  --shadow-float: 0 8px 28px rgba(0, 0, 0, .5);
+}
+/* 手机外壳与画布 */
+[data-theme='dark'] body { background: #050806; }
+[data-theme='dark'] .phone-frame {
+  background: var(--paper);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .55);
+}
+[data-theme='dark'] .phone-frame::after { opacity: .22; }
+/* 内容层在深色下重新声明语义映射（.page 定义会跟随 var 自动变，此处兜底 Sheet/层外） */
+[data-theme='dark'] .sheet { background: var(--surface); color: var(--ink); border-top-color: var(--hair-2); }
+[data-theme='dark'] .sheet b, [data-theme='dark'] .sheet strong { color: inherit; }
+[data-theme='dark'] .app-layer { background: var(--paper); }
+/* 硬编码白底覆盖（theme.css 里的历史值） */
+[data-theme='dark'] .page .quad-cell,
+[data-theme='dark'] .page .quick-btn .qb-icon,
+[data-theme='dark'] .page .spot-row,
+[data-theme='dark'] .page .input,
+[data-theme='dark'] .page .notice-item,
+[data-theme='dark'] .page .card { background: var(--surface); color: var(--ink); border-color: var(--hair); }
+[data-theme='dark'] .page .spot-fee { background: #4a3418; color: #ffce8a; }
+/* TabBar：深色玻璃 */
+[data-theme='dark'] .tabbar {
+  background: rgba(24, 33, 28, .86);
+  border-top-color: var(--hair);
+  box-shadow: 0 -1px 0 rgba(255,255,255,.04), 0 -12px 30px rgba(0,0,0,.3);
+}
+[data-theme='dark'] .tabbar-item { color: var(--ink-2); }
+[data-theme='dark'] .tabbar-item.active { color: var(--lime); }
+[data-theme='dark'] .tabbar-item.active svg { color: var(--lime); }
+/* 顶部栏玻璃 */
+[data-theme='dark'] .topbar { background: rgba(16, 22, 19, .86); color: var(--ink); }
+/* 深色下蝴蝶结/图标内的浅色描边适配 */
+[data-theme='dark'] .p-pill-line { color: var(--ink-2); border-color: var(--hair-2); }
+[data-theme='dark'] .p-pill-dark { background: var(--lime); color: #101613; }
+/* 地图控件：深色玻璃替代白块 */
+[data-theme='dark'] .page .map-ctrl {
+  background: rgba(26, 35, 30, .92); color: var(--ink); border-color: var(--hair-2);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+[data-theme='dark'] .page .search-box,
+[data-theme='dark'] .page .search-input { background: var(--surface); color: var(--ink); border-color: var(--hair); }
+/* 钓鱼档案：浅绿解锁格 → 深绿底 + 亮绿字，避免"浅色孤岛" */
+[data-theme='dark'] .dex-cell.on { background: linear-gradient(150deg, #253a1b, #1c2f16); border-color: #4a6a2a; }
+[data-theme='dark'] .dex-cell.add { background: var(--surface-2); border-color: #4a6a2a; color: var(--lime); }
+[data-theme='dark'] .dex-cell.add .dx-lab,
+[data-theme='dark'] .dex-cell.on .dx-lab { color: var(--lime); }
+/* 深色下浅色 hero 卡的固定底图保持（如赛博鱼缸渐变本来就深绿，无需反色） */
+
 /* ---------- 基础 ---------- */
 body {
   background: #e4e6df;

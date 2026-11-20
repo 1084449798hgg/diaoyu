@@ -3,6 +3,7 @@ import { api, todayStr } from '../api.js';
 import { useAuth, useToast } from '../store.jsx';
 import { Empty, Spinner, Sheet, Segmented } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
+import { useTheme } from '../motion/hooks.js';
 
 const USER_LNG = 119.05;
 const USER_LAT = 29.6;
@@ -45,6 +46,8 @@ export default function ProfilePage({ onPublish }) {
   const [editing, setEditing] = useState(false);
   const [encOpen, setEncOpen] = useState(false);
   const [vipOpen, setVipOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const { mode: themeMode, resolved: themeResolved, setThemeMode } = useTheme();
   const [form, setForm] = useState({ fishDate: todayStr(0), spotId: '', bait: '', fishSpecies: '', fishCount: '', content: '', visibility: 'private' });
 
   const loadMe = useCallback(async () => {
@@ -345,6 +348,7 @@ export default function ProfilePage({ onPublish }) {
           </div>
           <div className="more-list">
             {[
+              ['moon', '外观主题', { system: '跟随系统', light: '浅色', dark: '深色' }[themeMode]],
               ['shield', '安全与合规', '隐私政策 · UGC 机审 · 禁钓提醒'],
               ['doc', '预测免责说明', '鱼情预测仅供参考'],
               ['phone', '桌面小组件', '实时显示今日鱼口'],
@@ -352,7 +356,8 @@ export default function ProfilePage({ onPublish }) {
             ].map(([ic, t, sub]) => (
               <button key={t} className="more-row" style={{ width: '100%', textAlign: 'left' }}
                 onClick={() => {
-                  if (t === '退出登录') { logout(); showToast('已退出登录', 'info'); }
+                  if (t === '外观主题') setThemeOpen(true);
+                  else if (t === '退出登录') { logout(); showToast('已退出登录', 'info'); }
                   else if (t === '桌面小组件') showToast('已添加到桌面（演示）', 'success');
                   else showToast(t, 'info');
                 }}>
@@ -441,6 +446,44 @@ export default function ProfilePage({ onPublish }) {
 
       <Sheet open={vipOpen} title="15 天鱼口趋势" onClose={() => setVipOpen(false)}>
         <VipTrendList />
+      </Sheet>
+
+      {/* 外观主题：跟随系统 / 浅色 / 深色 */}
+      <Sheet open={themeOpen} title="外观主题" onClose={() => setThemeOpen(false)}>
+        <p style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.7, margin: '0 0 14px' }}>
+          选择App外观。「跟随系统」会随设备的深色模式设置自动切换。
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[
+            { key: 'system', label: '跟随系统', ic: 'gear', hint: 'AUTO' },
+            { key: 'light', label: '浅色', ic: 'sun', hint: 'LIGHT' },
+            { key: 'dark', label: '深色', ic: 'moon', hint: 'DARK' },
+          ].map((o) => {
+            const on = themeMode === o.key;
+            return (
+              <button key={o.key} onClick={() => { setThemeMode(o.key); showToast(`已切换：${o.label}`, 'success'); }}
+                style={{
+                  border: `2px solid ${on ? 'var(--lime-deep)' : 'var(--hair)'}`,
+                  background: on ? 'var(--lime-soft)' : 'var(--surface-2)',
+                  borderRadius: 16, padding: '14px 6px 11px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+                  transition: 'border-color .2s, background .2s',
+                }}>
+                <span style={{
+                  width: 44, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: o.key === 'dark' ? 'var(--forest)' : o.key === 'light' ? '#fff' : 'linear-gradient(135deg,#fff 50%,var(--forest) 50%)',
+                  border: '1px solid var(--hair-2)',
+                }}>
+                  <Icon name={o.ic} size={16} color={o.key === 'dark' ? 'var(--lime)' : o.key === 'system' ? '#888' : 'var(--forest)'} />
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink)' }}>{o.label}</span>
+                <span style={{ fontSize: 7.5, letterSpacing: '.14em', color: 'var(--ink-3)', fontWeight: 700 }}>{o.hint}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: 9.5, color: 'var(--ink-3)', lineHeight: 1.7, margin: '14px 0 0' }}>
+          当前生效：{themeResolved === 'dark' ? '深色' : '浅色'} · 偏好已自动保存
+        </p>
       </Sheet>
     </div>
   );

@@ -68,6 +68,28 @@ export function useEdgeBack(onClose, enabled = true) {
 /** 主题三态：跟随系统 / 浅色 / 深色 */
 const THEME_KEY = 'fa_theme_mode';
 
+/**
+ * 应用启动即写入 data-theme，确保登录页与任何页面首屏都是正确主题。
+ * 在 main.jsx 顶层调用一次；useTheme 负责后续交互切换。
+ */
+export function initTheme() {
+  const apply = () => {
+    let mode = 'system';
+    try { mode = localStorage.getItem(THEME_KEY) || 'system'; } catch (_) {}
+    const dark = mode === 'dark' || (
+      mode === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    );
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  };
+  apply();
+  const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (mq) {
+    const onChange = () => apply();
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+  }
+}
+
 export function useTheme() {
   const [mode, setMode] = useState(() => {
     try { return localStorage.getItem(THEME_KEY) || 'system'; } catch (_) { return 'system'; }
