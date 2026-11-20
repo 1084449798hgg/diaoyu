@@ -65,6 +65,23 @@ export function useEdgeBack(onClose, enabled = true) {
   return enabled ? { onPointerDown, onPointerUp } : {};
 }
 
+/** Dynamic Type：文字大小三档（HIG 无障碍） */
+const FONT_KEY = 'fa_font_scale';
+
+export function useFontScale() {
+  const [scale, setScale] = useState(() => {
+    try { return localStorage.getItem(FONT_KEY) || 'normal'; } catch (_) { return 'normal'; }
+  });
+  useEffect(() => {
+    const map = { normal: '1', large: '1.12', xlarge: '1.24' };
+    document.documentElement.setAttribute('data-fontscale', scale);
+    document.documentElement.style.setProperty('--font-scale', map[scale] || '1');
+    try { localStorage.setItem(FONT_KEY, scale); } catch (_) {}
+  }, [scale]);
+  const setFontScale = useCallback((next) => setScale(next), []);
+  return { scale, setFontScale };
+}
+
 /** 主题三态：跟随系统 / 浅色 / 深色 */
 const THEME_KEY = 'fa_theme_mode';
 
@@ -80,6 +97,12 @@ export function initTheme() {
       mode === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
     );
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    // 文字大小首屏同步
+    let fs = 'normal';
+    try { fs = localStorage.getItem(FONT_KEY) || 'normal'; } catch (_) {}
+    const map = { normal: '1', large: '1.12', xlarge: '1.24' };
+    document.documentElement.setAttribute('data-fontscale', fs);
+    document.documentElement.style.setProperty('--font-scale', map[fs] || '1');
   };
   apply();
   const mq = window.matchMedia?.('(prefers-color-scheme: dark)');

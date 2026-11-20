@@ -425,3 +425,28 @@ fishing-app/
 - 新增 `.is-now` 当前小时行（淡柠檬绿底 + 左侧竖条），仅在查看今天时生效，24 行中可快速定位。
 
 **验证**：`/tmp/v10/verify.py` **Chromium + WebKit（iOS Safari 内核）双引擎，本地 + 公网均 ALL PASS** —— 固定布局、8 列 24 行、列对齐 ≤1px、行高一致、无孤立第二行、无橙黄残留、数值小数位统一、当前小时恰好 1 行高亮、五 Tab 回归、**0 JS 错误 / 0 请求失败**；前后对比截图复核排版协调，页面滚到底部后续卡片（开口概率 / 气压趋势 / 环境因子）无遮挡（`.page` `padding-bottom: 88px`）。
+
+### 8.15 v11 对标苹果交互 · 四阶段流体交互改造
+
+愿景：把交互内核从「固定 CSS 关键帧」升级到苹果 Fluid Interfaces 水准——**可打断、弹簧物理、速度交接、按下即反馈**。分四阶段推进，每阶段独立提交、双引擎验收。
+
+**Phase 1 · 弹簧动效地基**
+- 引入 `framer-motion@11`；新建 `src/motion/`（`config.js` 弹簧参数 / `hooks.js` 无障碍·触觉·主题 / `Pressable.jsx` 按压）。
+- `Sheet` 改 `AnimatePresence` + spring（**全站 20+ 调用点签名不变**），删除 CSS 旧 closing 动画避免双驱动；TabBar 图标叶子级 `whileTap`、全屏页 `.app-layer` spring 进出场、toast `AnimatePresence`。
+- 关键坑：toast 靠 `translateX(-50%)` 居中，motion 覆盖 transform → 位移 variants 补 `x:'-50%'`；只在叶子控件动 transform，不碰 `.app-pane/.page` 容器（避免破坏 Tab 保活与几何）。
+
+**Phase 2 · 手势与手感**
+- Sheet 拖拽把手下拉关闭：位移 >110px 或速度 >600px/s 触发，`dragY` 驱动遮罩连续渐隐；`dragListener=false` + `dragControls` 只绑把手，不干扰内部长列表滚动；退场弹簧提速（stiffness 620）避免 WebKit 下 1.5s 拖沓。
+- 全屏页左缘右滑返回（`useEdgeBack`，`useRef` 稳定闭包）；触觉 `useHaptic`——安卓 `navigator.vibrate` 生效、iOS Safari 静默降级。
+
+**Phase 3 · 材质与深色主题**
+- `useTheme` 三态（跟随系统 / 浅 / 深）+ `initTheme` 首屏即生效 + localStorage 持久化 + `matchMedia` 系统监听。
+- `[data-theme='dark']` 全套令牌：只覆盖 premium 浅令牌、保留 theme.css 的 v3 深令牌（ScoreRing 等 SVG 依赖）；**`--forest` 保持深绿**避免「深绿底+白字」按钮对比度崩坏；地图控件、TabBar、钓鱼档案格深色适配。
+- `ProfilePage` 加「外观与文字」设置 Sheet（三态主题卡片预览）。
+
+**Phase 4 · 极致打磨**
+- Vite `manualChunks` 拆包：主业务包 1.45MB → **157KB**，echarts/motion/react 独立 vendor chunk 长期缓存；后端预压缩 `.gz` 按 hash 自动重建，全部 200。
+- Dynamic Type 三档（标准/大/特大）：`data-fontscale` + 精确字号映射（只放大字号不改布局几何，实测标题 18→22px），localStorage 持久化。
+- `forced-colors/-ms-high-contrast` 高对比模式、`prefers-reduced-motion` 全覆盖（弹簧退化为瞬时、循环动画禁用）。
+
+**验证**：`/tmp/v10/verify_{p4,dark,gesture}.py` + `/tmp/v9/verify.py` + `/tmp/verify_v8.py` + `/tmp/v10/verify.py` 共 **6 套验收脚本，Chromium + WebKit 双引擎全部 ALL PASS，0 JS 错误 / 0 请求失败**；三套历史回归（v8/v9/v10）确认 Tab 保活、瀑布流、鱼图居中、逐小时表格、渔获详情、四段筛选零回归。过程中修复了 2 个真实 bug：设置项文案与判断条件不一致导致 Sheet 打不开、FAB 淡入过渡时序导致的验收抖动。

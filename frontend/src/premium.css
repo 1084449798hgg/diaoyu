@@ -1328,3 +1328,59 @@ body {
   .fa-rise { animation: none; }
   .fa-card, .fa-back, .fa-info { transition: none; }
 }
+
+/* =====================================================================
+   Dynamic Type（HIG 无障碍）：文字大小三档，只缩放字号不缩放布局尺寸，
+   避免破坏卡片/瀑布流/表格几何。由 useFontScale 写入 --font-scale。
+   ===================================================================== */
+:root { --font-scale: 1; }
+[data-fontscale='large'] {
+  --font-scale: 1.12;
+}
+[data-fontscale='xlarge'] {
+  --font-scale: 1.24;
+}
+/* 主要文本类按档缩放：写死各元素原字号 × 倍率（em 相对父级会失真，故不用 em）。
+   只放大字号不改 padding/尺寸，表格与卡片几何保持稳定。 */
+[data-fontscale='large'] .p-sec-title { font-size: 20px; }
+[data-fontscale='large'] .wx-title { font-size: 33px; }
+[data-fontscale='large'] .cm-title { font-size: 34px; }
+[data-fontscale='large'] .me-name { font-size: 23.5px; }
+[data-fontscale='large'] .cm-text { font-size: 12.5px; }
+[data-fontscale='large'] .more-lab { font-size: 13.5px; }
+[data-fontscale='large'] .hx-table td,
+[data-fontscale='large'] .hx-table th { font-size: 12px; }
+[data-fontscale='large'] .wx-bite-title { font-size: 19px; }
+
+[data-fontscale='xlarge'] .p-sec-title { font-size: 22px; }
+[data-fontscale='xlarge'] .wx-title { font-size: 37px; }
+[data-fontscale='xlarge'] .cm-title { font-size: 38px; }
+[data-fontscale='xlarge'] .me-name { font-size: 26px; }
+[data-fontscale='xlarge'] .cm-text { font-size: 13.5px; }
+[data-fontscale='xlarge'] .more-lab { font-size: 15px; }
+[data-fontscale='xlarge'] .hx-table td,
+[data-fontscale='xlarge'] .hx-table th { font-size: 13.5px; }
+[data-fontscale='xlarge'] .wx-bite-title { font-size: 21px; }
+
+/* 强制颜色模式（Windows 高对比）：去掉装饰性材质，保留边框可读性 */
+@media (forced-colors: active), (-ms-high-contrast: active) {
+  .tabbar, .sheet, .topbar, .map-ctrl, .p-card, .app-layer {
+    background: Canvas !important;
+    color: CanvasText !important;
+    border: 1px solid CanvasText !important;
+    backdrop-filter: none !important;
+  }
+  .tabbar-item.active, .p-btn-dark, .cm-seg-btn.active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+/* reduced-motion：弹簧退化为瞬时，禁用装饰循环动画 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

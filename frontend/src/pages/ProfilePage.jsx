@@ -3,7 +3,7 @@ import { api, todayStr } from '../api.js';
 import { useAuth, useToast } from '../store.jsx';
 import { Empty, Spinner, Sheet, Segmented } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
-import { useTheme } from '../motion/hooks.js';
+import { useTheme, useFontScale } from '../motion/hooks.js';
 
 const USER_LNG = 119.05;
 const USER_LAT = 29.6;
@@ -48,6 +48,7 @@ export default function ProfilePage({ onPublish }) {
   const [vipOpen, setVipOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const { mode: themeMode, resolved: themeResolved, setThemeMode } = useTheme();
+  const { scale: fontScale, setFontScale } = useFontScale();
   const [form, setForm] = useState({ fishDate: todayStr(0), spotId: '', bait: '', fishSpecies: '', fishCount: '', content: '', visibility: 'private' });
 
   const loadMe = useCallback(async () => {
@@ -348,7 +349,7 @@ export default function ProfilePage({ onPublish }) {
           </div>
           <div className="more-list">
             {[
-              ['moon', '外观主题', { system: '跟随系统', light: '浅色', dark: '深色' }[themeMode]],
+              ['moon', '外观与文字', { system: '跟随系统', light: '浅色', dark: '深色' }[themeMode]],
               ['shield', '安全与合规', '隐私政策 · UGC 机审 · 禁钓提醒'],
               ['doc', '预测免责说明', '鱼情预测仅供参考'],
               ['phone', '桌面小组件', '实时显示今日鱼口'],
@@ -356,7 +357,7 @@ export default function ProfilePage({ onPublish }) {
             ].map(([ic, t, sub]) => (
               <button key={t} className="more-row" style={{ width: '100%', textAlign: 'left' }}
                 onClick={() => {
-                  if (t === '外观主题') setThemeOpen(true);
+                  if (t === '外观与文字') setThemeOpen(true);
                   else if (t === '退出登录') { logout(); showToast('已退出登录', 'info'); }
                   else if (t === '桌面小组件') showToast('已添加到桌面（演示）', 'success');
                   else showToast(t, 'info');
@@ -449,7 +450,7 @@ export default function ProfilePage({ onPublish }) {
       </Sheet>
 
       {/* 外观主题：跟随系统 / 浅色 / 深色 */}
-      <Sheet open={themeOpen} title="外观主题" onClose={() => setThemeOpen(false)}>
+      <Sheet open={themeOpen} title="外观与文字" onClose={() => setThemeOpen(false)}>
         <p style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.7, margin: '0 0 14px' }}>
           选择App外观。「跟随系统」会随设备的深色模式设置自动切换。
         </p>
@@ -483,6 +484,17 @@ export default function ProfilePage({ onPublish }) {
         </div>
         <p style={{ fontSize: 9.5, color: 'var(--ink-3)', lineHeight: 1.7, margin: '14px 0 0' }}>
           当前生效：{themeResolved === 'dark' ? '深色' : '浅色'} · 偏好已自动保存
+        </p>
+
+        <div className="p-divider" style={{ margin: '16px 0 14px' }} />
+        <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>文字大小 <em style={{ fontSize: 8, letterSpacing: '.14em', color: 'var(--ink-3)', marginLeft: 5 }}>TEXT SIZE</em></div>
+        <Segmented
+          options={[{ value: 'normal', label: '标准' }, { value: 'large', label: '大' }, { value: 'xlarge', label: '特大' }]}
+          value={fontScale}
+          onChange={(v) => { setFontScale(v); showToast(`文字大小：${{ normal: '标准', large: '大', xlarge: '特大' }[v]}`, 'success'); }}
+        />
+        <p style={{ fontSize: 9.5, color: 'var(--ink-3)', lineHeight: 1.7, margin: '10px 0 0' }}>
+          放大正文与标题字号，卡片与表格布局保持不变。
         </p>
       </Sheet>
     </div>
