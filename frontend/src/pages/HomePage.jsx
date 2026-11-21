@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api, todayStr } from '../api.js';
-import { useToast } from '../store.jsx';
+import { useToast, useLocation } from '../store.jsx';
 import { Sheet, Spinner } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
 import FishArt from '../components/fishArt.jsx';
@@ -71,6 +71,7 @@ function dedupeByImage(list = [], limit = 4) {
 
 export default function HomePage({ active = true, onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning, onOpenAtlas }) {
   const showToast = useToast();
+  const { setLocation } = useLocation();
   const [spots, setSpots] = useState([]);
   const [speciesList, setSpeciesList] = useState([]);
   const [spotId, setSpotId] = useState(1);
@@ -101,6 +102,7 @@ export default function HomePage({ active = true, onNavigateToMap, onNavigateToC
   const methodCfg = METHODS.find((m) => m.key === method);
   const hasGps = !!gps;
   const activeLoc = gps || DEFAULT_LOC;
+  const spot = spots.find((s) => s.id === spotId); // 提前定义：下面的同步 effect 依赖数组会引用
 
   useEffect(() => {
     (async () => {
@@ -231,6 +233,42 @@ export default function HomePage({ active = true, onNavigateToMap, onNavigateToC
     })();
   }, [spotId, species, today, showToast, geoReady, manualSpotId, hasGps, activeLoc.lng, activeLoc.lat, region, method]);
 
+  // —— 把首页的生效位置同步为全站地区数据源（UI/交互零改动）——
+  // 优先级与上面的 forecast 完全一致：手动选点 > GPS 坐标 > 默认 spotId，
+  // 这样天气/推理/地图/我的/发布页会跟着首页的定位或城市切换一起变。
+  useEffect(() => {
+    if (!geoReady) return;
+    if (manualSpotId) {
+      const hasSpotCoord = Number.isFinite(Number(spot?.lng)) && Number.isFinite(Number(spot?.lat));
+      const cityLabel = spot?.city || currentCity || '';
+      const regionObj = { province: spot?.province || '', city: cityLabel, district: spot?.district || '', street: '' };
+      setLocation({
+        spotId: manualSpotId,
+        lng: hasSpotCoord ? Number(spot.lng) : null,
+        lat: hasSpotCoord ? Number(spot.lat) : null,
+        waterType: methodWaterType(method),
+        cityName: cityLabel,
+        region: regionObj,
+        label: [cityLabel, spot?.name].filter(Boolean).join('·') || '当前钓点',
+        source: 'manual',
+      });
+    } else if (hasGps) {
+      const label = regionLabelText(region) || '当前位置';
+      setLocation({
+        spotId: null,
+        lng: activeLoc.lng,
+        lat: activeLoc.lat,
+        waterType: methodWaterType(method),
+        cityName: label,
+        region,
+        label,
+        source: 'gps',
+      });
+    } else {
+      setLocation({ spotId: 1, waterType: methodWaterType(method), cityName: '杭州市', region: null, label: '千岛湖', source: 'default' });
+    }
+  }, [geoReady, manualSpotId, hasGps, activeLoc.lng, activeLoc.lat, region, method, currentCity, spot?.city, spot?.name, setLocation]);
+
   useEffect(() => {
     api.catches({ page: 1, pageSize: 8 }).then((d) => setCatches(d.items)).catch(() => {});
   }, []);
@@ -258,7 +296,6 @@ export default function HomePage({ active = true, onNavigateToMap, onNavigateToC
     [hourly]
   );
   const bw = forecast?.bestWindow;
-  const spot = spots.find((s) => s.id === spotId);
   const p3h = cur && hourly[Math.max(0, nowHour - 3)];
   const pDelta = cur && p3h ? Math.round((cur.pressure - p3h.pressure) * 10) / 10 : 0;
   const wDelta = cur && hourly[Math.max(0, nowHour - 3)]

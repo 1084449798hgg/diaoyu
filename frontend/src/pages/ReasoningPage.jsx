@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, todayStr } from '../api.js';
-import { useToast } from '../store.jsx';
+import { useToast, useLocation, forecastParams } from '../store.jsx';
 import { Sheet, Spinner } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
 
@@ -131,28 +131,37 @@ function HourCurve({ hourly, windows }) {
 /* ---------------- 主页面 ---------------- */
 export default function ReasoningPage({ onClose }) {
   const { showToast } = useToast();
+  const { loc, setLocation } = useLocation();
   const [speciesList, setSpeciesList] = useState([]);
   const [spotsList, setSpotsList] = useState([]);
   const [species, setSpecies] = useState('鲫鱼');
-  const [spotId, setSpotId] = useState(1);
+  const [spotId, setSpotId] = useState(loc.spotId || 1);
   const [date, setDate] = useState(todayStr(0));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [picker, setPicker] = useState(null); // 'species' | 'spot' | 'source'
 
+  const listLng = loc.lng ?? 119.05;
+  const listLat = loc.lat ?? 29.6;
   useEffect(() => {
     api.species().then((d) => setSpeciesList(d.items || [])).catch(() => {});
-    api.spots({ lng: 119.05, lat: 29.6, radius: 40000 }).then((d) => setSpotsList(d.spots || [])).catch(() => {});
-  }, []);
+    api.spots({ lng: listLng, lat: listLat, radius: 40000 }).then((d) => setSpotsList(d.spots || [])).catch(() => {});
+  }, [listLng, listLat]);
+
+  // 全局位置变化时同步 picker 高亮（首页定位/切城市 → 推理页跟着变）
+  useEffect(() => {
+    if (loc.spotId) setSpotId(loc.spotId);
+  }, [loc.spotId, loc.version]);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    api.forecastReasoning({ spotId, date, species })
+    // 地区维度跟随全局；坐标模式走真实天气，spotId 模式走具体钓点
+    api.forecastReasoning(forecastParams(loc, { date, species }))
       .then((d) => { if (alive) { setData(d); setLoading(false); } })
       .catch((e) => { if (alive) { setLoading(false); showToast(e.message || '推理计算失败', 'error'); } });
     return () => { alive = false; };
-  }, [spotId, date, species, showToast]);
+  }, [loc.version, date, species, showToast]);
 
   const c = data?.conclusion;
   const place = data?.place;
@@ -308,7 +317,20 @@ export default function ReasoningPage({ onClose }) {
       <Sheet open={picker === 'spot'} title="选择钓点" onClose={() => setPicker(null)}>
         <div className="rs-pick">
           {(spotsList.length ? spotsList : [{ id: 1, name: '千岛湖中心湖区钓场' }]).map((s) => (
-            <button key={s.id} className={spotId === s.id ? 'on' : ''} onClick={() => { setSpotId(s.id); setPicker(null); }}>
+            <button key={s.id} className={spotId === s.id ? 'on' : ''} onClick={() => {
+              setSpotId(s.id); setPicker(null);
+              // 选具体钓点 → 写回全局，全站地区一起联动
+              setLocation({
+                spotId: s.id,
+                lng: Number.isFinite(Number(s.lng)) ? Number(s.lng) : null,
+                lat: Number.isFinite(Number(s.lat)) ? Number(s.lat) : null,
+                waterType: s.waterType || '湖泊',
+                cityName: s.city || s.province || '',
+                region: { province: s.province || '', city: s.city || '', district: s.district || '', street: '' },
+                label: s.name || '钓点',
+                source: 'manual',
+              });
+            }}>
               <Icon name="pin" size={15} />{s.name}{spotId === s.id && <Icon name="check" size={14} />}
             </button>
           ))}

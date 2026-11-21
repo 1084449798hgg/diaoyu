@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, todayStr } from '../api.js';
-import { useAuth, useToast } from '../store.jsx';
+import { useAuth, useToast, useLocation, forecastParams } from '../store.jsx';
 import { Spinner, Sheet, Segmented } from '../components/ui.jsx';
 import { PressureChart, ProbabilityChart } from '../components/Charts.jsx';
 import Icon from '../components/icons.jsx';
@@ -116,6 +116,7 @@ function CloudArt({ sky = '阴' }) {
 export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
   const showToast = useToast();
   const { user } = useAuth();
+  const { loc } = useLocation();
   const [speciesList, setSpeciesList] = useState([]);
   const [method, setMethod] = useState('freshwater');
   const [species, setSpecies] = useState('鲫鱼');
@@ -147,11 +148,12 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
     (async () => {
       setLoading(true);
       try {
-        setForecast(await api.forecast({ spotId, date, species, days: 15 }));
+        // 地区维度跟随全局（首页定位/切城市），钓法/鱼种/日期仍是本页自己的交互
+        setForecast(await api.forecast(forecastParams(loc, { date, species, days: 15 })));
       } catch (e) { showToast(e.message, 'error'); }
       finally { setLoading(false); }
     })();
-  }, [spotId, date, species, showToast]);
+  }, [loc.version, date, species, showToast]);
 
   const trend = forecast?.dailyTrend || [];
   const hourly = forecast?.hourly || [];
@@ -169,7 +171,7 @@ export default function FishingIndexPage({ onNavigateToMap, onOpenReasoning }) {
       : compareSpecies.length >= 3 ? compareSpecies : [...compareSpecies, name];
     setCompareSpecies(next);
     const datas = await Promise.all(
-      next.map((n) => api.forecast({ spotId, date, species: n }).catch(() => null))
+      next.map((n) => api.forecast(forecastParams(loc, { date, species: n })).catch(() => null))
     );
     setCompareData(datas.filter(Boolean));
   }

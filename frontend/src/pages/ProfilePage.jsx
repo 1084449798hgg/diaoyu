@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api, todayStr } from '../api.js';
-import { useAuth, useToast } from '../store.jsx';
+import { useAuth, useToast, useLocation, forecastParams } from '../store.jsx';
 import { Empty, Spinner, Sheet, Segmented } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
 import { useTheme, useFontScale } from '../motion/hooks.js';
@@ -36,6 +36,7 @@ function TankFish({ fish, label = true }) {
 export default function ProfilePage({ onPublish }) {
   const showToast = useToast();
   const { user: authUser, logout } = useAuth();
+  const { loc } = useLocation();
   const [me, setMe] = useState(null);
   const [enc, setEnc] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,10 +76,12 @@ export default function ProfilePage({ onPublish }) {
   useEffect(() => { loadMe(); }, [loadMe]);
   useEffect(() => { loadLogs(); }, [loadLogs]);
   useEffect(() => {
-    api.spots({ lng: USER_LNG, lat: USER_LAT, radius: 40000 })
+    const lng = loc.lng ?? USER_LNG;
+    const lat = loc.lat ?? USER_LAT;
+    api.spots({ lng, lat, radius: 40000 })
       .then((d) => setSpots(d.spots.filter((s) => !s.banned)))
       .catch(() => {});
-  }, []);
+  }, [loc.version]);
 
   async function submitLog() {
     if (!form.fishDate) return showToast('请选择出钓日期', 'error');
@@ -503,11 +506,12 @@ export default function ProfilePage({ onPublish }) {
 
 function VipTrendList() {
   const [trend, setTrend] = useState(null);
+  const { loc } = useLocation();
   useEffect(() => {
-    api.forecast({ spotId: 1, date: todayStr(0), species: '鲫鱼', days: 15 })
+    api.forecast(forecastParams(loc, { date: todayStr(0), species: '鲫鱼', days: 15 }))
       .then((d) => setTrend(d.dailyTrend))
       .catch(() => setTrend([]));
-  }, []);
+  }, [loc.version]);
   if (!trend) return <Spinner />;
   const max = Math.max(...trend.map((t) => t.score), 1);
   return (

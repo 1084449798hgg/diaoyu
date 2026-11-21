@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../api.js';
-import { useToast } from '../store.jsx';
+import { useToast, useLocation } from '../store.jsx';
 import { Segmented } from '../components/ui.jsx';
 import Icon from '../components/icons.jsx';
 
@@ -18,6 +18,7 @@ const BAIT_TAGS = ['蚯蚓', '红虫', '玉米', '酒米', '商品饵', '亮片'
  */
 export default function PublishPage({ onClose, onPublished }) {
   const showToast = useToast();
+  const { loc } = useLocation();
   const [step, setStep] = useState(1);
   const [spots, setSpots] = useState([]);
   const [imageUrl, setImageUrl] = useState('');
@@ -29,10 +30,12 @@ export default function PublishPage({ onClose, onPublished }) {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    api.spots({ lng: USER_LNG, lat: USER_LAT, radius: 40000 })
+    const lng = loc.lng ?? USER_LNG;
+    const lat = loc.lat ?? USER_LAT;
+    api.spots({ lng, lat, radius: 40000 })
       .then((d) => setSpots(d.spots.filter((s) => !s.banned)))
       .catch(() => {});
-  }, []);
+  }, [loc.version]);
 
   async function pickFile(e) {
     const file = e.target.files?.[0];

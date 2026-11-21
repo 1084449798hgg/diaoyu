@@ -173,16 +173,23 @@ async function getForecast({ spotId, coords, waterType, cityName, dateStr, speci
 }
 
 /**
- * 鱼情推理（v2 开源混合引擎）—— 保持原样，零回归
+ * 鱼情推理（v2 开源混合引擎）
+ * 坐标模式：与 /forecast 一致，用内存虚拟 spot 取真实天气推理，缓存按 0.001° 网格隔离、不入库。
  */
-async function getReasoning({ spotId, dateStr, speciesName }) {
+async function getReasoning({ spotId, coords, waterType, cityName, dateStr, speciesName }) {
   if (!DATE_RE.test(dateStr)) throw badRequest('date 需为 YYYY-MM-DD 格式');
-  const cacheKey = `reasoning:${spotId}:${dateStr}:${speciesName}`;
+  const isGeo = !!(coords && Number.isFinite(coords.lng) && Number.isFinite(coords.lat));
+  const species = await getSpeciesConfig(speciesName);
+  const spot = isGeo
+    ? buildVirtualSpot(coords, { waterType, cityName, species })
+    : await getSpot(spotId);
+
+  const cacheKey = isGeo
+    ? `reasoning:${MODEL_VERSION}:geo:${q3(coords.lng)}:${q3(coords.lat)}:${dateStr}:${speciesName}:${spot.water_type}`
+    : `reasoning:${spotId}:${dateStr}:${speciesName}`;
   const cached = await cacheGet(cacheKey);
   if (cached) return { ...cached, meta: { source: 'cache' } };
 
-  const spot = await getSpot(spotId);
-  const species = await getSpeciesConfig(speciesName);
   const weather = await weatherService.getWeather(spot, dateStr);
   const result = reasoningEngine.reason(spot, species, weather, dateStr);
   await cacheSet(cacheKey, result, secondsUntilEndOfDay(dateStr));

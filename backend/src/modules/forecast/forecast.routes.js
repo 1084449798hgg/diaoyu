@@ -45,13 +45,28 @@ router.get('/', ah(async (req, res) => {
 
 /**
  * GET /api/v1/forecast/reasoning?spotId=&date=&species=
+ *   或  ?lng=&lat=&date=&species=&waterType=&cityName=   （GPS 实时定位坐标模式）
  * 鱼情推理链（v2 开源混合引擎）：三层可解释推理 + 因子明细 + 建议 + 算法来源署名
+ * 坐标模式与 /forecast 一致：按经纬度构造内存虚拟 spot，取真实天气推理，不入库。
  */
 router.get('/reasoning', ah(async (req, res) => {
-  const { spotId, date, species } = req.query;
-  if (!spotId || !date || !species) throw badRequest('缺少必填参数 spotId / date / species');
+  const { spotId, lng, lat, date, species, waterType, cityName } = req.query;
+  if (!date || !species) throw badRequest('缺少必填参数 date / species');
+
+  const lngNum = Number(lng);
+  const latNum = Number(lat);
+  const hasCoords = lng !== undefined && lat !== undefined && lng !== '' && lat !== ''
+    && inRange(lngNum, -180, 180) && inRange(latNum, -90, 90);
+  if ((lng !== undefined && lng !== '') || (lat !== undefined && lat !== '')) {
+    if (!hasCoords) throw badRequest('经纬度参数不合法：lng 需在 -180~180，lat 需在 -90~90');
+  }
+  if (!hasCoords && !spotId) throw badRequest('缺少必填参数 spotId（或提供合法的 lng/lat）');
+
   const result = await forecastService.getReasoning({
-    spotId: Number(spotId),
+    spotId: spotId ? Number(spotId) : undefined,
+    coords: hasCoords ? { lng: lngNum, lat: latNum } : null,
+    waterType: WATER_TYPES.has(String(waterType)) ? String(waterType) : undefined,
+    cityName: cityName ? String(cityName).slice(0, 40) : undefined,
     dateStr: String(date),
     speciesName: String(species),
   });

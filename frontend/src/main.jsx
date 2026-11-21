@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import { AuthProvider } from './store.jsx';
+import { AuthProvider, LocationProvider } from './store.jsx';
 import { initTheme } from './motion/hooks.js';
 import './theme.css';
 import './premium.css';
@@ -12,7 +12,9 @@ initTheme();
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <LocationProvider>
+        <App />
+      </LocationProvider>
     </AuthProvider>
   </React.StrictMode>
 );
