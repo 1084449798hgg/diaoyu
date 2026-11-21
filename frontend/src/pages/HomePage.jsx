@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api, todayStr } from '../api.js';
 import { useToast } from '../store.jsx';
 import { Sheet, Spinner } from '../components/ui.jsx';
@@ -6,6 +6,8 @@ import Icon from '../components/icons.jsx';
 import FishArt from '../components/fishArt.jsx';
 import { resolveFishImage, FISH_ATLAS } from '../fishAtlas.js';
 import { goldenWindows } from '../utils/windows.js';
+import { useGeolocation } from '../hooks/useGeolocation.js';
+import { reverseGeocode } from '../utils/reverseGeocode.js';
 
 /**
  * 首页 v4：深墨绿 hero（品牌 / 四钓法 / 大评分 / 黄金段）
@@ -45,6 +47,11 @@ function timeAgo(iso) {
 
 const hh = (h) => String(h).padStart(2, '0');
 
+const DEFAULT_LOC = { lng: 119.05, lat: 29.6 }; // 定位失败时的兜底坐标（千岛湖）
+const METHOD_WATER = { freshwater: '湖泊', lure: '河流', sea: '近海', pond: '黑坑' };
+const methodWaterType = (m) => METHOD_WATER[m] || '湖泊';
+const regionLabelText = (r) => (r ? [r.city || r.province, r.district].filter(Boolean).join('·') : '');
+
 /**
  * 首页图片去重：同一屏里同一张写实标本只出现一次。
  * 以「最终会用到的图片」为键去重，避免「翘嘴 / 翘嘴鲌」这类别名落到同一张图上。
@@ -62,7 +69,7 @@ function dedupeByImage(list = [], limit = 4) {
   return out;
 }
 
-export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning, onOpenAtlas }) {
+export default function HomePage({ active = true, onNavigateToMap, onNavigateToCommunity, onNavigateToProfile, onPublish, onOpenReasoning, onOpenAtlas }) {
   const showToast = useToast();
   const [spots, setSpots] = useState([]);
   const [speciesList, setSpeciesList] = useState([]);
@@ -82,10 +89,18 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
   const [currentCity, setCurrentCity] = useState('杭州');
   const [citySearch, setCitySearch] = useState('');
   const [loadingCity, setLoadingCity] = useState(false);
+  // GPS 实时定位（UI 完全不变，只替换文案数据与指数数据源）
+  const { location: gps, status: geoStatus, locate } = useGeolocation();
+  const [region, setRegion] = useState(null);          // 逆地理得到的地区名
+  const [geoReady, setGeoReady] = useState(false);     // 定位链路是否已定局（含软超时）
+  const [manualSpotId, setManualSpotId] = useState(null); // 手动选点临时覆盖，null=用 GPS
+  const geoToastRef = useRef(false);                    // 降级 toast 去重
 
   const today = todayStr(0);
   const nowHour = useMemo(() => new Date().getHours(), []);
   const methodCfg = METHODS.find((m) => m.key === method);
+  const hasGps = !!gps;
+  const activeLoc = gps || DEFAULT_LOC;
 
   useEffect(() => {
     (async () => {
@@ -105,6 +120,50 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
     api.spotsCities().then((d) => setCities(d.cities || [])).catch(() => {});
   }, []);
 
+  // —— GPS 实时定位链路（不改变任何 UI / 交互）——
+  // active 时定位（切回首页绕过防抖立即定位）；切回首页时清除手动选点覆盖，回到 GPS 优先
+  useEffect(() => {
+    if (active) {
+      setManualSpotId(null);
+      locate({ minInterval: 0 });
+    }
+  }, [active, locate]);
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === 'visible' && active) locate(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [active, locate]);
+
+  // 软超时：2.5s 后先用默认坐标出指数，避免权限弹窗挂起导致空白；GPS 到达后再静默重算
+  useEffect(() => {
+    const t = setTimeout(() => setGeoReady(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (geoStatus === 'ok' || ['denied', 'error', 'unsupported'].includes(geoStatus)) setGeoReady(true);
+  }, [geoStatus]);
+
+  // GPS 坐标变化（用户移动）→ 清除手动选点覆盖 + 逆地理取地区名
+  // 注意：切回首页清覆盖由 active effect 负责（含坐标未变的情况），这里只管坐标真实变化
+  useEffect(() => {
+    if (!gps) { setRegion(null); return; }
+    setManualSpotId(null);
+    let alive = true;
+    reverseGeocode(gps.lng, gps.lat)
+      .then((r) => { if (alive) setRegion(r); })
+      .catch(() => { if (alive) setRegion(null); });
+    return () => { alive = false; };
+  }, [gps?.lng, gps?.lat]);
+
+  // 定位失败/被拒绝 → 轻提示（沿用现有 toast，去重）
+  useEffect(() => {
+    if (['denied', 'error', 'unsupported'].includes(geoStatus) && !geoToastRef.current) {
+      geoToastRef.current = true;
+      showToast('未获取到定位，显示默认区域', 'error');
+    }
+    if (geoStatus === 'ok') geoToastRef.current = false; // 成功后允许下次再提示
+  }, [geoStatus, showToast]);
+
   // 选择城市：加载该城市钓点并自动聚焦第一个，触发指数按当地天气重算
   const pickCity = async (city) => {
     setCitySearch('');
@@ -118,6 +177,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
         setSpots(list);
         setCurrentCity(city.name);
         setSpotId(list[0].id);
+        setManualSpotId(list[0].id); // 手动选城市 → 临时覆盖 GPS，下次定位再回到 GPS
       } else {
         showToast('该城市暂无可用钓点', 'error');
       }
@@ -146,14 +206,30 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
   };
 
   useEffect(() => {
+    if (!geoReady) return; // 等定位链路定局，避免先发一次默认坐标请求造成闪烁
     (async () => {
       setLoading(true);
+      const base = { date: today, species, days: 15 };
+      // 优先级：手动选点 > GPS 坐标 > 默认 spotId
+      const params = manualSpotId
+        ? { ...base, spotId: manualSpotId }
+        : hasGps
+          ? { ...base, lng: activeLoc.lng, lat: activeLoc.lat, waterType: methodWaterType(method), cityName: regionLabelText(region) }
+          : { ...base, spotId };
       try {
-        setForecast(await api.forecast({ spotId, date: today, species, days: 15 }));
+        let data;
+        try {
+          data = await api.forecast(params);
+        } catch (geoErr) {
+          // 坐标模式失败 → 降级回 spotId 模式，保证永远有指数
+          if (hasGps && !manualSpotId) data = await api.forecast({ ...base, spotId });
+          else throw geoErr;
+        }
+        setForecast(data);
       } catch (e) { showToast(e.message, 'error'); }
       finally { setLoading(false); }
     })();
-  }, [spotId, species, today, showToast]);
+  }, [spotId, species, today, showToast, geoReady, manualSpotId, hasGps, activeLoc.lng, activeLoc.lat, region, method]);
 
   useEffect(() => {
     api.catches({ page: 1, pageSize: 8 }).then((d) => setCatches(d.items)).catch(() => {});
@@ -238,7 +314,9 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
             <div className="hx-brand">钓鱼佬<sup>ANGLER</sup></div>
             <button className="hx-loc" onClick={() => setSpotPicker(true)} style={{ maxWidth: 210 }}>
               <Icon name="pin" size={11} strokeWidth={1.8} />
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{spot?.city || '杭州市'} · {spot?.name || '千岛湖'}</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{hasGps && !manualSpotId && region
+                ? `${region.city || region.province || '当前位置'} · ${region.district || region.street || '当前区域'}`
+                : `${spot?.city || '杭州市'} · ${spot?.name || '千岛湖'}`}</span>
             </button>
           </div>
           <div style={{ flex: 1 }} />
@@ -265,7 +343,9 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
           <div className="hx-score-num">{score}<span>/100</span></div>
           <div className="hx-score-side">
             <div className="hx-level"><i className="hx-level-dot" />{scoreTitle(score)}</div>
-            <div className="hx-score-sub">城市实时{methodCfg.label}指数 · {spot?.name?.slice(0, 6) || '千岛湖'}</div>
+            <div className="hx-score-sub">城市实时{methodCfg.label}指数 · {hasGps && !manualSpotId && region
+              ? (region.district || region.city || '当前位置').slice(0, 6)
+              : (spot?.name?.slice(0, 6) || '千岛湖')}</div>
           </div>
         </div>
 
@@ -466,7 +546,7 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
         </div>
         {spots.map((s) => (
           <button key={s.id} className="p-card" style={{ width: '100%', textAlign: 'left', display: 'block' }}
-            onClick={() => { setSpotId(s.id); setSpotPicker(false); }}>
+            onClick={() => { setSpotId(s.id); setManualSpotId(s.id); setSpotPicker(false); }}>
             <div style={{ fontSize: 13.5, fontWeight: 700 }}>{s.name}</div>
             <div style={{ marginTop: 4, fontSize: 10.5, color: 'var(--ink-3)' }}>
               {s.waterType} · 渔获 {s.catchesCount} 条 · {s.fee}
@@ -476,7 +556,8 @@ export default function HomePage({ onNavigateToMap, onNavigateToCommunity, onNav
       </Sheet>
 
       <Sheet open={vipSheet} title="15 天鱼口趋势" onClose={() => setVipSheet(false)}>
-        <VipTrend spotId={spotId} species={species} />
+        <VipTrend spotId={spotId} species={species} manualSpotId={manualSpotId}
+          coords={hasGps ? activeLoc : null} waterType={methodWaterType(method)} cityName={regionLabelText(region)} />
       </Sheet>
 
       <Sheet open={waterSheet} title={method === 'sea' ? '潮汐表' : '江河水位'} onClose={() => setWaterSheet(false)}>
@@ -574,13 +655,19 @@ function WaterPanel({ cur, forecast }) {
   );
 }
 
-function VipTrend({ spotId, species }) {
+function VipTrend({ spotId, species, manualSpotId, coords, waterType, cityName }) {
   const [trend, setTrend] = useState(null);
   useEffect(() => {
-    api.forecast({ spotId, date: todayStr(0), species, days: 15 })
+    // 与首页分数同源：手动选点 > GPS 坐标 > 默认 spotId
+    const p = manualSpotId
+      ? { spotId: manualSpotId }
+      : coords
+        ? { lng: coords.lng, lat: coords.lat, waterType, cityName }
+        : { spotId };
+    api.forecast({ ...p, date: todayStr(0), species, days: 15 })
       .then((d) => setTrend(d.dailyTrend))
       .catch(() => setTrend([]));
-  }, [spotId, species]);
+  }, [spotId, species, manualSpotId, coords?.lng, coords?.lat, waterType, cityName]);
 
   if (!trend) return <Spinner />;
   const max = Math.max(...trend.map((t) => t.score), 1);

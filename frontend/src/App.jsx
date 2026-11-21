@@ -62,6 +62,7 @@ export default function App() {
       case 'home':
         return (
           <HomePage
+            active={tab === 'home'}
             onNavigateToMap={goMap}
             onNavigateToCommunity={() => { setCommunityFilter(null); goTab('community'); }}
             onNavigateToProfile={() => goTab('profile')}

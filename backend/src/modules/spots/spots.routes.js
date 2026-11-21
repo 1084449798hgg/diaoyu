@@ -106,6 +106,43 @@ router.get('/cities', ah(async (_req, res) => {
   res.json({ total: cities.length, cities });
 }));
 
+const REGEO_URL = 'https://www.amap.com/service/regeo';
+
+/** GET /api/v1/spots/reverse-geocode?lng=&lat= —— GPS 坐标逆解析为省/市/区（高德网页版接口，无需 key） */
+router.get('/reverse-geocode', ah(async (req, res) => {
+  const lng = Number(req.query.lng);
+  const lat = Number(req.query.lat);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+    throw badRequest('lng/lat 参数不合法');
+  }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    // 高德 regeo 接口经纬度顺序为 longitude,latitude（WGS84 近似，网页端直接用）
+    const url = `${REGEO_URL}?longitude=${lng}&latitude=${lat}`;
+    const r = await globalThis.fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.amap.com/' } });
+    if (!r.ok) throw new Error('regeo http ' + r.status);
+    const j = await r.json();
+    const d = j.data || {};
+    if (String(j.status) !== '1' || !d.province) throw new Error('regeo 无结果');
+    // 直辖市：city 与 province 同名时，区名取 district
+    const city = d.city || d.province || '';
+    const district = d.district || '';
+    res.json({
+      province: d.province || '',
+      city,
+      district,
+      street: d.street || (d.road_list && d.road_list[0] && d.road_list[0].name) || '',
+      desc: d.desc || '',
+    });
+  } catch (e) {
+    // 逆地理失败返回空结构，前端降级为默认文案，不影响指数
+    res.json({ province: '', city: '', district: '', street: '', desc: '' });
+  } finally {
+    clearTimeout(timer);
+  }
+}));
+
 /** GET /api/v1/spots/geocode?name= —— 代理 Open-Meteo 地理编码（搜不在内置列表的城市） */
 router.get('/geocode', ah(async (req, res) => {
   const name = String(req.query.name || '').trim();

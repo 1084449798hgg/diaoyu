@@ -61,6 +61,7 @@ export const api = {
   spotsCities: () => request('/spots/cities'),
   spotsByCity: (city) => request(`/spots${qs({ city })}`),
   geocode: (name) => request(`/spots/geocode${qs({ name })}`),
+  reverseGeocode: (lng, lat) => request(`/spots/reverse-geocode${qs({ lng, lat })}`),
   ensureSpots: (body) => request('/spots/ensure', { method: 'POST', body }),
   // forecast
   forecast: (params) => request(`/forecast${qs(params)}`),
