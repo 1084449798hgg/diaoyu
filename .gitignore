@@ -25,3 +25,4 @@ assets/fish-cutout/
 core
 core.*
 *.core
+current-url.txt
